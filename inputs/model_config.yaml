@@ -1,0 +1,10 @@
+default_configuration:
+  model_type: 'yolov8m'
+  training_epochs: 100
+  load_saved_models: False # Load saved models from the model directory instead of training
+  model_directory: 'models' # Directory to save the model
+  device: "cpu" # Device to run the model on
+model_metadata: 
+  model1: 
+    model_type: 'yolov8m'
+    training_epochs: 100
