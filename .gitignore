@@ -2,3 +2,4 @@ liplad-with-yolov8*
 data*
 .DS_Store
 *__pycache__*
+*.pt
