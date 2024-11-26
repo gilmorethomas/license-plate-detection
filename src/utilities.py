@@ -6,8 +6,9 @@ import numpy as np
 import cv2
 from copy import deepcopy
 from os.path import basename
-# The following is a substitute for cv2.imshow,
-#  which you would use on your local machine but Colab does not support it
+import random
+import torch
+import numpy as np
 
 def imshow(img, title=None, render_type="cv2"):
     """Displays images
@@ -102,4 +103,12 @@ if __name__ == '__main__':
     imshow_from_path(path.join(assumed_datasetpath, "images/Cars3.png"))
 
     cv2.waitKey(0)
-    x = 0 
+
+def set_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+
+

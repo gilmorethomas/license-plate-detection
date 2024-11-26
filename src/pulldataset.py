@@ -7,17 +7,16 @@ import os
 from os import path  
 import kagglehub
 from zipfile import ZipFile
-import logging
 import glob 
 import kagglehub
 import xml.etree.ElementTree as xmlet
 import pandas as pd
 from src.utilities import imshow_from_path
+from src.logger import logger as logging 
 
 # Download latest version
 
 def download_dataset():
-    logging.basicConfig(level=logging.INFO)
     assumed_datasetpath = path.join(os.path.expanduser("~"), ".cache/kagglehub/datasets/andrewmvd/car-plate-detection/versions/1")
 
     if path.exists(assumed_datasetpath): 

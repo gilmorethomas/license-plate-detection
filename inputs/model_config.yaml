@@ -1,9 +1,14 @@
 default_configuration:
   model_type: 'yolov8m'
   training_epochs: 100
-  load_saved_models: False # Load saved models from the model directory instead of training
+  load_saved_model: False # Load saved models from the model directory instead of training
   model_directory: 'models' # Directory to save the model
-  device: "cpu" # Device to run the model on
+  device: "mps" # Device to run the model on. cpu is standard for most, mps available for Apple Silicon with Metal Performance Shaders (MPS), cuda for Nvidia GPUs
+  train_split: 0.5 # Train split
+  validation_split: 0.3 # Validation split
+  test_split: 0.2 # Test split
+  seed: 42 # Seed for reproducibility
+  doc: Note that anything that is not specified in the individual model will be taken from here. Almost all parameters from here can be overridden in the individual model configuration.
 model_metadata: 
   model1: 
     model_type: 'yolov8m'

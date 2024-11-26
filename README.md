@@ -32,6 +32,7 @@ python add_missing_data.py
 
 Repo structure 
 ## References 
+* https://docs.ultralytics.com/usage/python/#how-do-i-train-a-custom-yolo11-model-using-my-dataset
 * https://www.kaggle.com/code/myriamgam62/car-plate-detection-yolov8-s This was used for pulling the dataset and xml schema
 * https://keylabs.ai/blog/getting-started-with-yolov8-a-beginners-guide/
 * https://mpolinowski.github.io/docs/IoT-and-Machine-Learning/ML/2023-09-15--yolo8-tracking-and-ocr/2023-09-15/
