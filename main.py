@@ -93,7 +93,7 @@ def train_model(model, model_config, defaults, data, verbose=True):
     #     logging.warning(f"Invalid parameters include {set(train_args.keys()) - set(valid_params.keys())}")
 
 
-    model_obj = model_obj.train(
+    train_results = model_obj.train(
         data=interface_yaml,  
         project=f'outputs/{model}/runs', # Set the output directory for the model
         **train_args
@@ -106,10 +106,10 @@ def train_model(model, model_config, defaults, data, verbose=True):
         # resume=model_config.get('resume', defaults['resume'])  # Resume training from a previous run
 
     ,)
-    logging.info(f"Saving model to {model_name}")  
     model_obj.save(path.join(model_dir, model_name + ".pt"))
-
-    return model_obj
+# Export the model to ONNX format
+    path = model_obj.export(format="onnx")  # return path to exported model
+    return model_obj, train_results, path
 
 
 def train_models(models, data):
