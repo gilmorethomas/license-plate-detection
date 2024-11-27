@@ -44,7 +44,7 @@ def parse_dataset(datasetpath, load_existing_annotations=True):
     assert path.exists(datasetpath), "Dataset path does not exist"
     assert path.exists(path.join(datasetpath, "annotations")), "Dataset annotations"
     files = glob.glob(path.join(datasetpath, "annotations", "*.xml"))
-    labels_dict = dict(filepath=[],imgpath=[], xmin=[],xmax=[],ymin=[],ymax=[])
+    labels_dict = dict(filepath=[],imgpath=[], imgname = [], xmin=[],xmax=[],ymin=[],ymax=[], img_width=[], img_height=[])
     if load_existing_annotations and path.exists("data/labels.csv"):
         return pd.read_csv("data/labels.csv")
     else: 
@@ -54,19 +54,28 @@ def parse_dataset(datasetpath, load_existing_annotations=True):
 
             info = xmlet.parse(filename)
             root = info.getroot()
+            member_name   = root.find('filename')
             member_object = root.find('object')
-            labels_info = member_object.find('bndbox')
+            member_size   = root.find('size')
+            labels_info   = member_object.find('bndbox')
             xmin = int(labels_info.find('xmin').text)
             xmax = int(labels_info.find('xmax').text)
             ymin = int(labels_info.find('ymin').text)
             ymax = int(labels_info.find('ymax').text)
+            img_width = int(member_size.find('width').text)
+            img_height = int(member_size.find('height').text)
+            # Pull out image name, remove the .png extension
+            imgname    = member_name.text.split(".")[0]
 
             labels_dict['filepath'].append(filename)
             labels_dict['imgpath'].append(filename.replace("annotations", "images").replace("xml", "png"))
+            labels_dict['imgname'].append(imgname)
             labels_dict['xmin'].append(xmin)
             labels_dict['xmax'].append(xmax)
             labels_dict['ymin'].append(ymin)
             labels_dict['ymax'].append(ymax)
+            labels_dict['img_width'].append(img_width)  
+            labels_dict['img_height'].append(img_height)    
 
     return pd.DataFrame(labels_dict)
 if __name__ == "__main__":
