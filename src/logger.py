@@ -18,31 +18,33 @@ formatter = colorlog.ColoredFormatter(
     style='%'
 )
 
-
 logger = colorlog.getLogger('example_logger')
-handler = logging.StreamHandler()
-handler.setFormatter(formatter)
-logger.addHandler(handler)
+logger.setLevel(logging.DEBUG)  # Set the logging level
+
+# Check if handlers are already added to avoid duplicate handlers
+if not logger.hasHandlers():
+    handler = logging.StreamHandler()
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+# Prevent log messages from being propagated to the root logger
+logger.propagate = False
 
 def set_logfile(output_dir, name):
-            # Create handlers
-            c_handler = logging.StreamHandler()
-            if not path.exists(output_dir):
-                makedirs(output_dir)
-            f_handler = logging.FileHandler(path.join(output_dir, name))
-            c_handler.setLevel(logging.INFO)
-            f_handler.setLevel(logging.INFO)
-
-            # Create formatters and add it to handlers
-            c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
-            f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-            c_handler.setFormatter(c_format)
-            f_handler.setFormatter(f_format)
-
-            # Add handlers to the logger
-            logger.addHandler(c_handler)
-            logger.addHandler(f_handler)
-
+    # Create handlers
+    c_handler = logging.StreamHandler()
+    f_handler = logging.FileHandler(path.join(output_dir, name))
+    
+    # Set level and formatter for handlers
+    c_handler.setLevel(logging.DEBUG)
+    f_handler.setLevel(logging.DEBUG)
+    c_handler.setFormatter(formatter)
+    f_handler.setFormatter(formatter)
+    
+    # Add handlers to the logger
+    logger.addHandler(c_handler)
+    logger.addHandler(f_handler)
+    
 def setLevel(level, logger=logger):
     levels = {
         'DEBUG': logging.DEBUG,

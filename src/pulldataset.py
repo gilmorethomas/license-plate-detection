@@ -13,6 +13,7 @@ import xml.etree.ElementTree as xmlet
 import pandas as pd
 from src.utilities import imshow_from_path
 from src.logger import logger as logging 
+import shutil
 
 # Download latest version
 
@@ -78,6 +79,40 @@ def parse_dataset(datasetpath, load_existing_annotations=True):
             labels_dict['img_height'].append(img_height)    
 
     return pd.DataFrame(labels_dict)
+
+
+def UpdateDataFrameToYamlFormat(split_name, Input_Dataframe):
+    # Define paths for labels and images
+    labels_path = os.path.join(LPG.OUTPUTS_DIR, 'datasets', 'cars_license_plate_new', split_name, 'labels')
+    images_path = os.path.join(LPG.OUTPUTS_DIR, 'datasets', 'cars_license_plate_new', split_name, 'images')
+
+    # Create directories if they don't exist
+    os.makedirs(labels_path, exist_ok=True)
+    os.makedirs(images_path, exist_ok=True)
+
+    # Iterate over each row in the DataFrame
+    for _, row in Input_Dataframe.iterrows():
+        img_name = row['imgname'];
+        img_extension = '.png'
+
+        # Calculate YOLO format coordinates
+        x_center = (row['xmin'] + row['xmax']) / 2 / row['img_width']
+        y_center = (row['ymin'] + row['ymax']) / 2 / row['img_height']
+        width = (row['xmax'] - row['xmin']) / row['img_width']
+        height = (row['ymax'] - row['ymin']) / row['img_height']
+
+        # Save labels in YOLO format
+        label_path = os.path.join(labels_path, f'{img_name}.txt')
+        with open(label_path, 'w') as file:
+            file.write(f"0 {x_center:.4f} {y_center:.4f} {width:.4f} {height:.4f}\n")
+
+        # Copy image to the images directory
+        try:
+            shutil.copy(row['imgpath'], os.path.join(images_path, img_name + img_extension))
+        except Exception as e:
+            logging.error(f"Failed to copy image {row['imgpath']} to {os.path.join(images_path, img_name + img_extension)}: {e}")
+
+    print(f"Created '{images_path}' and '{labels_path}'")
 if __name__ == "__main__":
     datasetpath = download_dataset()
     imshow_from_path(path.join(datasetpath, "images/1.png"))
