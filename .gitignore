@@ -3,3 +3,6 @@ data*
 .DS_Store
 *__pycache__*
 *.pt
+*log 
+*outputs* 
+*runs* 

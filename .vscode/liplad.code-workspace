@@ -1,0 +1,28 @@
+{
+    "folders": [
+        {
+            "path": "../"
+        }
+    ],
+    "settings": {
+        "python.terminal.activateEnvironment": true,
+        "python.terminal.activateEnvInCurrentTerminal": true,
+        "python.pythonPath": "${workspaceFolder}/liplad-with-yolov8/bin/python",  // Adjust the path if necessary
+        "terminal.integrated.env.osx": {
+            "VIRTUAL_ENV": "${workspaceFolder}/liplad-with-yolov8",
+            "PATH": "${workspaceFolder}/liplad-with-yolov8/bin:${env:PATH}"
+        },
+        "terminal.integrated.env.linux": {
+            "VIRTUAL_ENV": "${workspaceFolder}/liplad-with-yolov8",
+            "PATH": "${workspaceFolder}/liplad-with-yolov8/bin:${env:PATH}"
+        },
+        "terminal.integrated.env.windows": {
+            "VIRTUAL_ENV": "${workspaceFolder}\\liplad-with-yolov8",
+            "PATH": "${workspaceFolder}\\liplad-with-yolov8\\Scripts;${env:PATH}"
+        },
+        "terminal.integrated.shellArgs.osx": ["--rcfile", "${workspaceFolder}/liplad-with-yolov8/bin/activate"],
+        "terminal.integrated.shellArgs.linux": ["--rcfile", "${workspaceFolder}/liplad-with-yolov8/bin/activate"],
+        "terminal.integrated.shellArgs.windows": ["-NoExit", "-Command", "& { . ${workspaceFolder}\\liplad-with-yolov8\\Scripts\\Activate.ps1 }"]
+
+    }
+}

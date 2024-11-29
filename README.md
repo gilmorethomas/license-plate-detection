@@ -46,11 +46,18 @@ Repo structure
 
 ## Main components of this include 
 1. Datset preparation 
-    - Collect and process dataset of images to detect license plates on cars 
+    - Collect and process dataset of images to detect license plates on cars (YOLOv8)
+2. Object detection
+    - Object detector implemented using YOLOv8
 2. Classification using Oriented Bounding Boxes (OBB) 
+3. Logging
+   * Logging is done using a combination of custom code as well as Comet. Comet is an Ultralytics product that allows for server-based logging 
+   * You can turn of logging with Comet by setting USE_COMET in globals.py to be false
+   * TODO better capture this 
 
 ## Potential future updates 
 * Integration with Autodistill 
     * https://github.com/autodistill/autodistill?ref=blog.roboflow.com
     * https://blog.roboflow.com/how-to-train-yolov8-on-a-custom-dataset/ 
-* Integration with comet
+* Integration with comet for logging 
+* Integration with SORT, which offers realtime tracking algorithm for multiple object tracking in videos, using rudimentary association and state estimation 

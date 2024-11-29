@@ -44,7 +44,6 @@ def set_logfile(output_dir, name):
     # Add handlers to the logger
     logger.addHandler(c_handler)
     logger.addHandler(f_handler)
-    
 def setLevel(level, logger=logger):
     levels = {
         'DEBUG': logging.DEBUG,

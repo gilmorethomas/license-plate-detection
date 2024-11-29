@@ -1,0 +1,15 @@
+{
+    "python.pythonPath": "${workspaceFolder}/liplad-with-yolov8/bin/python",  // Adjust the path if necessary
+    "terminal.integrated.env.osx": {
+        "VIRTUAL_ENV": "${workspaceFolder}/liplad-with-yolov8",
+        "PATH": "${workspaceFolder}/liplad-with-yolov8/bin:${env:PATH}"
+    },
+    "terminal.integrated.env.linux": {
+        "VIRTUAL_ENV": "${workspaceFolder}/liplad-with-yolov8",
+        "PATH": "${workspaceFolder}/liplad-with-yolov8/bin:${env:PATH}"
+    },
+    "terminal.integrated.env.windows": {
+        "VIRTUAL_ENV": "${workspaceFolder}\\liplad-with-yolov8",
+        "PATH": "${workspaceFolder}\\liplad-with-yolov8\\Scripts;${env:PATH}"
+    }
+}

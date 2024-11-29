@@ -20,6 +20,7 @@ import psutil
 from src.plotting import finalize_plot
 from src.globals import LICENSE_PLATE_GLOBALS as LPG
 
+
 def imshow(img, title=None, render_type="cv2"):
     """Displays images
 
@@ -32,43 +33,51 @@ def imshow(img, title=None, render_type="cv2"):
         ValueError: If an invalid render type is passed
     """
     # If multiple images are passed, display them in a grid
-    if isinstance(img, list):
-        if render_type == "matplotlib":
-            # Use matplotlib to show images in a grid
-            num_images = len(img)
-            cols = int(np.ceil(np.sqrt(num_images)))
-            rows = int(np.ceil(num_images / cols))
-            fig, axes = plt.subplots(rows, cols, figsize=(15, 15))
-            axes = np.array(axes)  # Ensure axes is a numpy array
-            axes = axes.reshape(rows, cols)  # Reshape to 2D array if necessary
-            for i, image in enumerate(img):
-                ax = axes[i // cols, i % cols] if rows > 1 and cols > 1 else axes[i % cols]
-                cv2.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
-                ax.axis('off')
-            if title:
-                fig.suptitle(title)
-            plt.show()
-        elif render_type == "cv2":
-            # Combine multiple images into a single image. Need to convert to tensors first
-            img = [transforms.ToTensor()(i) for i in img]
-            img = utils.make_grid(img)
-            cv2.imshow(title, cv2.cvtColor(np.transpose(img.numpy(), (1, 2, 0)), cv2.COLOR_BGR2RGB))
-        else:
-            raise ValueError("Invalid render type. Use either 'matplotlib' or 'cv2'")
-    else:
-        if render_type == "matplotlib":
-            # Use matplotlib to show a single image
-            plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-            plt.axis('off')
-            if title:
-                plt.title(title)
-            plt.show()
-        elif render_type == "cv2":
-            cv2.imshow(title, img)
-            cv2.waitKey(0)
-        else:
-            raise ValueError("Invalid render type. Use either 'matplotlib' or 'cv2'")
+    try:     
+        if isinstance(img, list):
+            if render_type == "matplotlib":
+                # Use matplotlib to show images in a grid
+                num_images = len(img)
+                cols = int(np.ceil(np.sqrt(num_images)))
+                rows = int(np.ceil(num_images / cols))
+                fig, axes = plt.subplots(rows, cols, figsize=(15, 15))
+                axes = np.array(axes)  # Ensure axes is a numpy array
+                axes = axes.reshape(rows, cols)  # Reshape to 2D array if necessary
+                for i, image in enumerate(img):
+                    ax = axes[i // cols, i % cols] if rows > 1 and cols > 1 else axes[i % cols]
+                    cv2.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+                    ax.axis('off')
+                if title:
+                    fig.suptitle(title)
+                plt.show()
+            elif render_type == "cv2":
+                # Combine multiple images into a single image. Need to convert to tensors first
+                img = [transforms.ToTensor()(i) for i in img]
+                # Account for the fact that images may not be the same size and pad with zeros
+                max_height = max([i.shape[1] for i in img])
+                max_width = max([i.shape[2] for i in img])
+                # Pad with zeros to make all images the same size in height and width
+                img = [transforms.Pad((0, 0, max_width - i.shape[2], max_height - i.shape[1]))(i) for i in img]
 
+                img = utils.make_grid(img)
+                cv2.imshow(title, cv2.cvtColor(np.transpose(img.numpy(), (1, 2, 0)), cv2.COLOR_BGR2RGB))
+            else:
+                raise ValueError("Invalid render type. Use either 'matplotlib' or 'cv2'")
+        else:
+            if render_type == "matplotlib":
+                # Use matplotlib to show a single image
+                plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+                plt.axis('off')
+                if title:
+                    plt.title(title)
+                plt.show()
+            elif render_type == "cv2":
+                cv2.imshow(title, img)
+                cv2.waitKey(0)
+            else:
+                raise ValueError("Invalid render type. Use either 'matplotlib' or 'cv2'")
+    except Exception as e:
+        logging.error(f"Error displaying image: {e}")
 
 def imshow_from_path(img_path, render_type="cv2"):
     # Use cv2 to show image 
@@ -82,8 +91,12 @@ def load_image(img_path):
 def overlay_boxes(img, box_list_dict):
     # Copy the image so we don't modify the original
     img_new = deepcopy(img)
+    if not isinstance(box_list_dict, list):
+        box_list_dict = [box_list_dict]
     for box in box_list_dict:
         x1, y1, x2, y2 = box["x1"], box["y1"], box["x2"], box["y2"]
+        # Cast to int
+        x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
         color = box.get("color", (0, 255, 0))
         line_thickness = box.get("line_thickness", 2)
         # line_type = box.get("line_type", cv2.LINE_AA)
@@ -228,4 +241,20 @@ def plot_resource_utilization(cpu_usage, memory_usage, gpu_usage, timestamps, ou
     # Normalize y axis scale to 100 
     fig.update_yaxes(range=[0, 100])
     logging.info(f"Creating resource utilization plot to {output_dir}")
-    finalize_plot(fig, "Resource Utilization", "resource_utilization", output_dir, save_png=LPG.SAVE_PNG, save_html=LPG.SAVE_HTML)
+    finalize_plot(fig, "Resource Utilization", "resource_utilization", path.join(output_dir, 'resource_utilization'), save_png=LPG.SAVE_PNG, save_html=LPG.SAVE_HTML)
+
+
+def convert_xy_bounds_to_centered_xywh(df):
+    """Converts the x, y bounds to the center x, y and width, height
+
+    Args:
+        df (pd.DataFrame): DataFrame containing the x, y bounds
+
+    Returns:
+        pd.DataFrame: DataFrame containing the center x, y and width, height
+    """
+    df['x_center'] = (df['xmin'] + df['xmax']) / 2 / df['img_width']
+    df['y_center'] = (df['ymin'] + df['ymax']) / 2 / df['img_height']
+    df['width'] = (df['xmax'] - df['xmin']) / df['img_width']
+    df['height'] = (df['ymax'] - df['ymin']) / df['img_height']
+    return df
