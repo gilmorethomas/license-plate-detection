@@ -1,4 +1,4 @@
-# license-plate-detection
+\# license-plate-detection
 License Plate Detection with YOLOv8 
 
 ## Project Setup
@@ -20,15 +20,14 @@ export PYTORCH_ENABLE_MPS_FALLBACK=1
 ```bash
 pip install -r requirements.txt
 ```
+* You will need to install tesseract: 
+Follow the instructions here https://tesseract-ocr.github.io/tessdoc/Installation.html
+
 * Run main.py with the sample video file to generate the test.csv file 
 ``` python
 python main.py
 ```
-* Run the add_missing_data.py file for interpolation of values to match up for the missing frames and smooth output.
-```python
-python add_missing_data.py
 
-```
 
 ## Repo Structure
 * Documentation: Includes report webpage 
@@ -40,7 +39,7 @@ Repo structure
 * https://docs.ultralytics.com/usage/python/#how-do-i-train-a-custom-yolo11-model-using-my-dataset
 * https://www.kaggle.com/code/myriamgam62/car-plate-detection-yolov8-s This was used for pulling the dataset and xml schema
 * https://keylabs.ai/blog/getting-started-with-yolov8-a-beginners-guide/
-* https://mpolinowski.github.io/docs/IoT-and-Machine-Learning/ML/2023-09-15--yolo8-tracking-and-ocr/2023-09-15/
+* Example for license plate detection and tracking: https://mpolinowski.github.io/docs/IoT-and-Machine-Learning/ML/2023-09-15--yolo8-tracking-and-ocr/2023-09-15/
 * https://docs.ultralytics.com/modes/train/
 * YOLOv8 architecture overview https://www.mdpi.com/2227-7080/12/9/164 
 
@@ -49,7 +48,30 @@ Repo structure
     - Collect and process dataset of images to detect license plates on cars (YOLOv8)
 2. Object detection
     - Object detector implemented using YOLOv8
-2. Classification using Oriented Bounding Boxes (OBB) 
+    - Model training: https://docs.ultralytics.com/modes/train/
+    - Model validation: https://docs.ultralytics.com/modes/val/ 
+3. Optical Character Recognition (OCR) using EasyOCR 
+    - Images are pre-processed before fed to OCR to convert to greyscale. Thresholding is applied as well 
+    - Bounding boxes of license plates are fed to OCR model
+    - Limitations
+        - License plates of 
+    - https://www.jaided.ai/easyocr/
+    - https://pypi.org/project/easyocr/ 
+    - https://www.jaided.ai/easyocr/documentation/ 
+    - https://github.com/ankandrew/fast-plate-ocr
+    - Using pre-trained English model 
+    - There is currently no template-matching for plates
+    - Detection model: Character Region Awareness for Text Detection (CRAFT)
+        - https://arxiv.org/pdf/1904.01941
+        - Defaults:
+            - Text confidence threshold of 0.7
+            - Text low-bound score of 0.4
+            - Link Confidence threshold of 0.4
+            - Maximum canvas size of 2560
+            - Image magnification ratio of 1
+    - Recognition network: https://github.com/JaidedAI/EasyOCR/blob/master/custom_model.md
+        - No custom recognition network is used 
+    - Compassing of images (rotations of 0, 90, 180, and 270 used)
 3. Logging
    * Logging is done using a combination of custom code as well as Comet. Comet is an Ultralytics product that allows for server-based logging 
    * You can turn of logging with Comet by setting USE_COMET in globals.py to be false
@@ -60,4 +82,5 @@ Repo structure
     * https://github.com/autodistill/autodistill?ref=blog.roboflow.com
     * https://blog.roboflow.com/how-to-train-yolov8-on-a-custom-dataset/ 
 * Integration with comet for logging 
-* Integration with SORT, which offers realtime tracking algorithm for multiple object tracking in videos, using rudimentary association and state estimation 
+* Integration with SORT, which offers realtime tracking algorithm for multiple object tracking in videos, using rudimentary association and state estimation. This would allow for multiple looks at license plates, which would potentially help build greater confidence in the detected license plates and numbers
+* Integration with TensorFlow for better logging

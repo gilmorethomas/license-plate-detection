@@ -3,12 +3,14 @@ from os import path
 import string
 import easyocr
 from src.utilities import load_image, overlay_boxes, imshow, save_images, save_image
+import pytesseract
+import cv2
 import pandas as pd 
 # Initialize the OCR reader
 from ultralytics import YOLO
 
 
-reader = easyocr.Reader(['en'], gpu=False)
+reader = easyocr.Reader(['en'], gpu=False, detect_network='craft', recog_network='standard')
 
 # Mapping dictionaries for character conversion
 dict_char_to_int = {'O': '0',
@@ -24,7 +26,7 @@ dict_int_to_char = {'0': 'O',
                     '4': 'A',
                     '6': 'G',
                     '5': 'S'}
-
+allowlist = string.ascii_uppercase + string.digits + string.ascii_lowercase + ' ' + '.'
 
 def write_csv(results, output_path):
     """
@@ -111,29 +113,65 @@ def format_license(text):
     return license_plate_
 
 
-def read_license_plate(license_plate_crop):
+def read_license_plate(license_plate_crop, enforce_format=False, threshold=0.1, engine='easyocr'):
     """
     Read the license plate text from the given cropped image.
 
     Args:
         license_plate_crop (PIL.Image.Image): Cropped image containing the license plate.
+        enforce_format (bool): If True, enforce the license plate format.
+        threshold (float): Confidence threshold for the OCR reader.
 
     Returns:
-        tuple: Tuple containing the formatted license plate text and its confidence score.
+        list(tuple): List of tuples containing the license plate text and the corresponding score.
     """
+    if engine == 'easyocr':
+        detections = reader.readtext(license_plate_crop, allowlist=allowlist, rotation_info=[0])
+        #, 90, 180, 270])
+        return_detections = []
 
-    detections = reader.readtext(license_plate_crop)
+        for detection in detections:
+            bbox, text, score = detection
+            if score < threshold:
+                continue
+            if enforce_format: 
+                text = text.upper().replace(' ', '')
+                if license_complies_format(text):
+                    return_detections.append([format_license(text), score])
+            else:
+                return_detections.append({'x1': bbox[0][0], 'y1': bbox[0][1], 'x2': bbox[2][0], 'y2': bbox[2][1], 'text': text, 'score': score})
+        
+    elif engine == 'tesseract': 
+        predicted_license_plates = []
+        predicted_result = pytesseract.image_to_string(license_plate_crop, lang ='eng', 
+        config ='--oem 3 --psm 6 -c tessedit_char_whitelist = ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789') 
+        
+        filter_predicted_result = "".join(predicted_result.split()).replace(":", "").replace("-", "") 
+        predicted_license_plates.append(filter_predicted_result) 
+    else: 
+        raise ValueError('Invalid OCR engine. Please use either "easyocr" or "tesseract".')
 
-    for detection in detections:
-        bbox, text, score = detection
+    if len(return_detections) == 0:
+        return_detections.append({'x1': None, 'y1': None, 'x2': None, 'y2': None, 'text': None, 'score': None})
 
-        text = text.upper().replace(' ', '')
+    return return_detections
 
-        if license_complies_format(text):
-            return format_license(text), score
 
-    return None, None
-
+def overlay_recognition_results(img, results):
+    """
+    Overlay the recognition results on the image.
+    
+    """
+    for result in results:
+        # Make sure all of the values are not None
+        if any([res is None for res in result.values()]):
+            continue
+        # Add anything that is not in x1, y1, x2, y2 to the additional_info key 
+        additional_info = {key: value for key, value in result.items() if key not in ['x1', 'y1', 'x2', 'y2']}
+        result = {key: value for key, value in result.items() if key in ['x1', 'y1', 'x2', 'y2']}
+        result['additional_info'] = additional_info
+        img = overlay_boxes(img, result)
+    return img
 
 def get_car(license_plate, vehicle_track_ids):
     """
@@ -161,6 +199,43 @@ def get_car(license_plate, vehicle_track_ids):
         return vehicle_track_ids[car_indx]
 
     return -1, -1, -1, -1, -1
+
+def preprocess_img(img):
+    """ Preprocess the image for OCR. Implement the following steps:
+        1. De-colorize the image (convert to grayscale)
+        2. Posterize the image (convert to binary with threshold 64) 
+    """
+        # de-colorize
+    plate_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # posterize
+    _, plate_treshold = cv2.threshold(plate_gray, 64, 255, cv2.THRESH_BINARY_INV)
+    return plate_gray, plate_treshold
+def perform_ocr_of_single_img(img, bounding_box, out_dir, save_name='final_license_plate'):  
+    """ Perform OCR on a single image. 
+    """
+    # Read the license plate from cropped truth image
+    # Overlay the bounding boxes on the image to verify 
+    img2 = overlay_boxes(img, bounding_box)
+    # imshow([img, img2], "Combined Images", "matplotlib")
+
+    # Crop the image to get the license plate
+    license_plate_crop = img[int(bounding_box['y1']):int(bounding_box['y2']), int(bounding_box['x1']):int(bounding_box['x2'])]
+    
+    # Read the license plate from cropped truth image
+    gray, plate_treshold = preprocess_img(license_plate_crop)
+    results = read_license_plate(license_plate_crop, enforce_format=False)
+    #         license_plate_dict = {'x1': license_plate[0], 'y1': license_plate[1], 'x2': license_plate[2], 'y2': license_plate[3], 'additional_info': {'score': license_plate[4], 'class_id': license_plate[5]}}
+    img_with_results = overlay_recognition_results(license_plate_crop, results) 
+
+    results_with_gray = read_license_plate(gray, enforce_format=False)
+    img_with_results_gray = overlay_recognition_results(gray, results_with_gray)
+    results_with_treshold = read_license_plate(plate_treshold, enforce_format=False)
+    img_with_results_treshold = overlay_recognition_results(plate_treshold, results_with_treshold)
+
+    img_overlayed = img 
+
+    save_images([img_overlayed, license_plate_crop, img_with_results, img_with_results_gray, img_with_results_treshold], 
+                path.join(out_dir, '..', 'test_data'),  save_name)
 
 if __name__ == "__main__":
     # Load the image and labels
@@ -193,45 +268,37 @@ if __name__ == "__main__":
     box_dict['x2'] = labels['xmax'].iloc[0]
     box_dict['y1'] = labels['ymin'].iloc[0]
     box_dict['y2'] = labels['ymax'].iloc[0]
+    # perform_ocr_of_single_img(img, box_dict, path.join(dirname, '..', 'test_data'), save_name='license_plate_6')
 
-    # Overlay the bounding boxes on the image to verify 
-    img2 = overlay_boxes(img, box_dict)
-    # imshow([img, img2], "Combined Images", "matplotlib")
+    # Do the same as the above for license plate 210, which has reversed text 
+    # Load the image and labels
+    # Get path of this file 
+    dirname = os.path.dirname(__file__)
+    img = load_image(path.join(dirname ,'../test_data/Cars210.png'))
+    labels = pd.read_csv(path.join(dirname, '../test_data/Cars210.txt'), delimiter=' ', header=None)
+    simple_detector  = YOLO(path.join(dirname, '..', 'test_data', 'simple_model.pt'))
+ 
+    # Rename the columns
+    labels.columns = ['class_id', 'x_center', 'y_center', 'width', 'height']
+    # Get the image dimensions
+    img_height, img_width, _ = img.shape
+    labels['img_width'] = img_width
+    labels['img_height'] = img_height
+    # Calculate the bounding box coordinates in non-normalized format. This is the inverse of what is done in the YOLO format conversion
+    labels['xmin'] = (labels['x_center'] - labels['width'] / 2) * labels['img_width']
+    labels['xmax'] = (labels['x_center'] + labels['width'] / 2) * labels['img_width']
+    labels['ymin'] = (labels['y_center'] - labels['height'] / 2) * labels['img_height']
+    labels['ymax'] = (labels['y_center'] + labels['height'] / 2) * labels['img_height']
 
-    # Crop the image to get the license plate
-    license_plate_crop = img[int(box_dict['y1']):int(box_dict['y2']), int(box_dict['x1']):int(box_dict['x2'])]
-    
-    # Read the license plate from cropped truth image
-    license_number, license_number_score = read_license_plate(license_plate_crop)
-    # imshow([license_plate_crop], "License Plate Crop")
-    # Combine the images side by side
-    # imshow([img, license_plate_crop], "Combined Images")
-    model_obj = YOLO('yolov8m')
-    
-    # Assume that we know all the cars and already have those images
-    license_plate_detects = simple_detector(license_plate_crop)
 
-    img_overlayed = img 
-    # for license_plate_detect in license_plate_detects: 
-    #     for license_plate in license_plate_detect.boxes.data.tolist():
-    #         # Overlay the bounding boxes on the image to verify
-    #         license_plate_dict = {'x1': license_plate[0], 'y1': license_plate[1], 'x2': license_plate[2], 'y2': license_plate[3], 'additional_info': {'score': license_plate[4], 'class_id': license_plate[5]}}
-    #         img_overlayed = overlay_boxes(img_overlayed, license_plate_dict)
-    #         x1, y1, x2, y2, score, class_id = license_plate
 
-    #         license_plate_crop = img[int(y1):int(y2), int(x1): int(x2), :]
-
-    #         # imshow([license_plate_crop], "License Plate Crop")
-    #         license_number, license_number_score = read_license_plate(license_plate_crop)
-    #         print(license_number, license_number_score)
-    #         if license_number is not None:
-    #             print("License Plate Number: ", license_number)
-    #         else:
-    #             print("License Plate Number: ", "Not Found")
-    
-    save_images([license_plate_crop, img_overlayed], path.join(dirname, '..', 'test_data'),  'final_license_plate')
-    x = 0 
-
-    # Get the license plate coordinates    
-    # Test the OCR reader
-    # license_plate_crop = Image.open('data/license_plate.png')
+    x_center = (labels['xmin'] + labels['xmax']) / 2 / labels['img_width']
+    y_center = (labels['ymin'] + labels['ymax']) / 2 / labels['img_height']
+    width = (labels['xmax'] - labels['xmin']) / labels['img_width']
+    height = (labels['ymax'] - labels['ymin']) / labels['img_height'] 
+    box_dict = {}
+    box_dict['x1'] = labels['xmin'].iloc[0]
+    box_dict['x2'] = labels['xmax'].iloc[0]
+    box_dict['y1'] = labels['ymin'].iloc[0]
+    box_dict['y2'] = labels['ymax'].iloc[0]
+    perform_ocr_of_single_img(img, box_dict, path.join(dirname, '..', 'test_data'), save_name='license_plate_210')

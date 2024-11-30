@@ -91,6 +91,10 @@ def load_image(img_path):
 def overlay_boxes(img, box_list_dict):
     # Copy the image so we don't modify the original
     img_new = deepcopy(img)
+    # If image is in grayscale, convert to BGR
+    if len(img_new.shape) == 2:
+        img_new = cv2.cvtColor(img_new, cv2.COLOR_GRAY2BGR)
+
     if not isinstance(box_list_dict, list):
         box_list_dict = [box_list_dict]
     for box in box_list_dict:
@@ -125,7 +129,7 @@ def save_image(img, outdir, name):
         name = name + '.png'
     cv2.imwrite(path.join(outdir, name), img)
     
-def save_images(imgs, outdir, name):
+def save_images(imgs, outdir, name, annotations=None):
     """Writes a list of images to disk. Combines the images into a single image
 
     Args:
@@ -143,13 +147,28 @@ def save_images(imgs, outdir, name):
     max_width = max([i.shape[2] for i in img])
     # Pad with zeros to make all images the same size in height and width
     img = [transforms.Pad((0, 0, max_width - i.shape[2], max_height - i.shape[1]))(i) for i in img]
-    # Use torch stack to combine the images
+
+    # Account for the fact that some images may be grayscale, converting ones with 1 channel to 3 channels
+    img = [i.repeat(3, 1, 1) if i.shape[0] == 1 else i for i in img]
+
+
 
     img_new = utils.make_grid(img)
+    # Add annotations to the image. Make them be at the center of each image within the grid 
+
+        # for i, annotation in enumerate(annotations):
+        #     # Add annotation to the top of the image
+        #     img[i] = cv2.putText(img[i], annotation, (0, 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            
     # Convert to 0-255 range
     img_new = img_new.mul(255).byte()
     # Need to make sure the image is in the right format
     img_new = np.transpose(img_new.numpy(), (1, 2, 0))
+    if annotations:
+        raise NotImplementedError("Annotations not yet implemented")
+        assert len(annotations) == len(imgs), "Number of annotations must match number of images"
+        for i, annotation in enumerate(annotations):
+            img_new = cv2.putText(img_new, annotation, (int(i * max_width + 10), int(10)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
     save_image(img_new, outdir, name)
 
 def show_multiple_images(imgs):
