@@ -88,6 +88,14 @@ def load_image(img_path):
     assert path.exists(img_path), f"Image path {img_path} does not exist"
     return cv2.imread(img_path)
 
+def get_optimal_font_scale(text, width):
+    for scale in reversed(range(0, 60, 1)):
+        textSize = cv2.getTextSize(text, fontFace=cv2.FONT_HERSHEY_DUPLEX, fontScale=scale/10, thickness=1)
+        new_width = textSize[0][0]
+        if (new_width <= width):
+            return scale/10
+    return 1
+
 def overlay_boxes(img, box_list_dict):
     # Copy the image so we don't modify the original
     img_new = deepcopy(img)
@@ -111,7 +119,28 @@ def overlay_boxes(img, box_list_dict):
         additional_info = box.get("additional_info", {})
         if additional_info:
             text = ', '.join([f"{k}: {v}" for k, v in additional_info.items()])
-            img_new = cv2.putText(img_new, text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+            # If the text is going to bleed off the image, make it multiline
+            if x2 - x1 < cv2.getTextSize(text, cv2.FONT_HERSHEY_DUPLEX, 1, 2)[0][0]:
+                text = text.replace(", ", "\n")
+            text = text.split("\n")
+            # Put the text at the bottom of the image. If this will bleed off the image, put it at the top
+            for i, t in enumerate(text):
+                font_size = get_optimal_font_scale(t, x2 - x1) / 4
+                text_height = cv2.getTextSize(t, cv2.FONT_HERSHEY_DUPLEX, font_size, 2)[0][1]
+                # If the text will fit above the box, put it there
+                if y1 - text_height > 0:
+                    y_text = y1 - 10
+                # If the text will fit below the box, put it there
+                elif y2 + text_height < img_new.shape[0]:
+                    y_text = y2 + 10
+                # If the text will not fit above or below the box, put it at the top of the image
+                else:
+                    y_text = 10
+                # Adjust the text size so it fits within the image, centered on the box
+                x_loc = (x1 + x2) // 2
+                x_loc = x1
+                y_loc = y_text + i * (text_height + 10)
+                cv2.putText(img_new, t, (x_loc, y_loc), cv2.FONT_HERSHEY_DUPLEX, font_size, color, 2)
     return img_new
 
 def save_image(img, outdir, name): 

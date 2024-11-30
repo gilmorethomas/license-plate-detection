@@ -26,8 +26,8 @@ dict_int_to_char = {'0': 'O',
                     '4': 'A',
                     '6': 'G',
                     '5': 'S'}
-allowlist = string.ascii_uppercase + string.digits + string.ascii_lowercase + ' ' + '.'
-
+allowlist = string.ascii_uppercase + string.digits + string.ascii_lowercase + '.' + ' '
+tesseract_config = {'psm': 6, 'oem' : 3, 'lang': 'eng', 'char_whitelist':f'{allowlist}'}
 def write_csv(results, output_path):
     """
     Write the results to a CSV file.
@@ -113,7 +113,8 @@ def format_license(text):
     return license_plate_
 
 
-def read_license_plate(license_plate_crop, enforce_format=False, threshold=0.1, engine='easyocr'):
+
+def read_license_plate(license_plate_crop, enforce_format=False, threshold=0.1, engine='tesseract'):
     """
     Read the license plate text from the given cropped image.
 
@@ -125,10 +126,10 @@ def read_license_plate(license_plate_crop, enforce_format=False, threshold=0.1, 
     Returns:
         list(tuple): List of tuples containing the license plate text and the corresponding score.
     """
+    return_detections = []
     if engine == 'easyocr':
         detections = reader.readtext(license_plate_crop, allowlist=allowlist, rotation_info=[0])
         #, 90, 180, 270])
-        return_detections = []
 
         for detection in detections:
             bbox, text, score = detection
@@ -142,12 +143,34 @@ def read_license_plate(license_plate_crop, enforce_format=False, threshold=0.1, 
                 return_detections.append({'x1': bbox[0][0], 'y1': bbox[0][1], 'x2': bbox[2][0], 'y2': bbox[2][1], 'text': text, 'score': score})
         
     elif engine == 'tesseract': 
-        predicted_license_plates = []
-        predicted_result = pytesseract.image_to_string(license_plate_crop, lang ='eng', 
-        config ='--oem 3 --psm 6 -c tessedit_char_whitelist = ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789') 
+
+        # predicted_result = pytesseract.image_to_string(license_plate_crop, lang ='eng', config ='--oem 3 --psm 6 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789') 
+        predicted_result = pytesseract.image_to_string(license_plate_crop, lang =tesseract_config.get('lang', 'eng'), config =f"--oem {tesseract_config.get('oem', '3')} --psm {tesseract_config.get('psm', 7)} -c tessedit_char_whitelist={tesseract_config.get('char_whitelist', allowlist)}").strip()         
+        data = pytesseract.image_to_data(license_plate_crop, lang =tesseract_config.get('lang', 'eng'), config =f"--oem {tesseract_config.get('oem', '3')} --psm {tesseract_config.get('psm', 7)} -c tessedit_char_whitelist={tesseract_config.get('char_whitelist', allowlist)}", output_type=pytesseract.Output.DICT)         
+        # Change the 'conf' key to 'score' for consistency
+        data['score'] = data.pop('conf')
+        # Change left, top, width, height to x1, y1, x2, y2
+        data['x1'] = data.pop('left')
+        data['y1'] = data.pop('top')
+        data['x2'] = [x + w for x, w in zip(data['x1'], data['width'])]
+        data['y2'] = [y + h for y, h in zip(data['y1'], data['height'])]
+        data.pop('width')
+        data.pop('height')
+        data.pop('level')
+        data.pop('page_num')
+        data.pop('block_num')
+        data.pop('par_num')
+        data.pop('word_num')
+        data.pop('line_num')
         
-        filter_predicted_result = "".join(predicted_result.split()).replace(":", "").replace("-", "") 
-        predicted_license_plates.append(filter_predicted_result) 
+        # Reformat dictionary of lists to be a list of dictionaries 
+        data = [dict(zip(data, t)) for t in zip(*data.values())]
+        # Filter out any empty strings
+        data = [d for d in data if d['text'] != '']
+        # Filter out anything with a -1 score, since this means there is no confidence score available
+        data = [d for d in data if d['score'] != -1]
+        return_detections += data
+
     else: 
         raise ValueError('Invalid OCR engine. Please use either "easyocr" or "tesseract".')
 
@@ -169,6 +192,7 @@ def overlay_recognition_results(img, results):
         # Add anything that is not in x1, y1, x2, y2 to the additional_info key 
         additional_info = {key: value for key, value in result.items() if key not in ['x1', 'y1', 'x2', 'y2']}
         result = {key: value for key, value in result.items() if key in ['x1', 'y1', 'x2', 'y2']}
+        result['color'] = (255, 0, 0)
         result['additional_info'] = additional_info
         img = overlay_boxes(img, result)
     return img
@@ -203,14 +227,26 @@ def get_car(license_plate, vehicle_track_ids):
 def preprocess_img(img):
     """ Preprocess the image for OCR. Implement the following steps:
         1. De-colorize the image (convert to grayscale)
-        2. Posterize the image (convert to binary with threshold 64) 
+        2. Posterize the image (convert to binary with threshold 64)
+        3. Apply Gaussian blur to the image
+        4. Convert the image to RGB format
+        5. Invert the image (black text on white background)
+    return: plate_gray, plate_treshold, img
     """
         # de-colorize
     plate_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     # posterize
     _, plate_treshold = cv2.threshold(plate_gray, 64, 255, cv2.THRESH_BINARY_INV)
-    return plate_gray, plate_treshold
-def perform_ocr_of_single_img(img, bounding_box, out_dir, save_name='final_license_plate'):  
+
+    # Applies Gaussian blur to the image
+    img = cv2.GaussianBlur(plate_treshold, (5, 5), 0)
+    # By default OpenCV stores images in BGR format and since pytesseract assumes RGB format, we need to convert from BGR to RGB format
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    # Tesseract prefers non-inverted images (black text on white background)
+    img = cv2.bitwise_not(img)
+    return plate_gray, plate_treshold, img
+
+def perform_ocr_of_single_img(img, bounding_box, out_dir, save_name='final_license_plate', save_image_debug=True):  
     """ Perform OCR on a single image. 
     """
     # Read the license plate from cropped truth image
@@ -222,20 +258,18 @@ def perform_ocr_of_single_img(img, bounding_box, out_dir, save_name='final_licen
     license_plate_crop = img[int(bounding_box['y1']):int(bounding_box['y2']), int(bounding_box['x1']):int(bounding_box['x2'])]
     
     # Read the license plate from cropped truth image
-    gray, plate_treshold = preprocess_img(license_plate_crop)
-    results = read_license_plate(license_plate_crop, enforce_format=False)
-    #         license_plate_dict = {'x1': license_plate[0], 'y1': license_plate[1], 'x2': license_plate[2], 'y2': license_plate[3], 'additional_info': {'score': license_plate[4], 'class_id': license_plate[5]}}
-    img_with_results = overlay_recognition_results(license_plate_crop, results) 
+    gray, plate_treshold, preprocessed_img = preprocess_img(license_plate_crop)
 
-    results_with_gray = read_license_plate(gray, enforce_format=False)
-    img_with_results_gray = overlay_recognition_results(gray, results_with_gray)
-    results_with_treshold = read_license_plate(plate_treshold, enforce_format=False)
-    img_with_results_treshold = overlay_recognition_results(plate_treshold, results_with_treshold)
+    # Save the plate_threshold image
 
-    img_overlayed = img 
-
-    save_images([img_overlayed, license_plate_crop, img_with_results, img_with_results_gray, img_with_results_treshold], 
-                path.join(out_dir, '..', 'test_data'),  save_name)
+    results = read_license_plate(preprocessed_img, enforce_format=False)
+    img_with_results_preprocessesd = overlay_recognition_results(preprocessed_img, results)
+    if save_image_debug: 
+        save_images([img, license_plate_crop, img_with_results_preprocessesd], out_dir, save_name)
+        save_image(plate_treshold, out_dir, save_name + '_treshold')
+        save_image(gray, out_dir, save_name + '_gray')
+        save_image(preprocessed_img, out_dir, save_name + '_preprocess')
+    return results
 
 if __name__ == "__main__":
     # Load the image and labels
@@ -268,8 +302,10 @@ if __name__ == "__main__":
     box_dict['x2'] = labels['xmax'].iloc[0]
     box_dict['y1'] = labels['ymin'].iloc[0]
     box_dict['y2'] = labels['ymax'].iloc[0]
-    # perform_ocr_of_single_img(img, box_dict, path.join(dirname, '..', 'test_data'), save_name='license_plate_6')
-
+    results = perform_ocr_of_single_img(img, box_dict, path.join(dirname, '..', 'test_data'), save_name='license_plate_6')
+    # Output to CSV with pandas dataframe 
+    df = pd.DataFrame(results)
+    df.to_csv(path.join(dirname, '..', 'test_data', 'license_plate_6.csv'), index=False)
     # Do the same as the above for license plate 210, which has reversed text 
     # Load the image and labels
     # Get path of this file 
@@ -301,4 +337,6 @@ if __name__ == "__main__":
     box_dict['x2'] = labels['xmax'].iloc[0]
     box_dict['y1'] = labels['ymin'].iloc[0]
     box_dict['y2'] = labels['ymax'].iloc[0]
-    perform_ocr_of_single_img(img, box_dict, path.join(dirname, '..', 'test_data'), save_name='license_plate_210')
+    results = perform_ocr_of_single_img(img, box_dict, path.join(dirname, '..', 'test_data'), save_name='license_plate_210')
+    df = pd.DataFrame(results)
+    df.to_csv(path.join(dirname, '..', 'test_data', 'license_plate_210.csv'), index=False)

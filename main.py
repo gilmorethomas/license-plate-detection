@@ -186,30 +186,13 @@ def validate_model(model, data):
     """
     logging.info(f"Validating model {model}")
     results = model.val()
-
+    return results
     ...
 def validate_models(models, data):
     ...
     for modelname, model_obj in models.items():
-        validate_model(modelname, model_obj)
-    # Display a few of the images with the bounding boxes
-    #for i in range(5): 
-    #    # Pull from train data randomly 
-    #    img_path = train_df.sample(1).iloc[0]['image_path']
-    #    img = load_image(img_path)
-    #    
-    #    # Assuming the coordinates are in the dataframe
-    #    coords = [
-    #        {'x1': train_df.iloc[i]['xmin'], 'y1': train_df.iloc[i]['ymin'], 'x2': train_df.iloc[i]['xmax'], 'y2': train_df.iloc[i]['ymax'], "color": (0, 255, 0)},
-    #        # Add predicted coordinates if available
-    #    ]
-    #
-    #    img_truth = overlay_boxes(img, [coords[0]])
-    #    # img_predicted = overlay_boxes(img, [coords[1]])  # Uncomment if predicted coordinates are available
-    #    title = f"Combined Images for {path.basename(img_path).split('.')[0]}"
-    #
-    #    imshow([img, img_truth], title, legend=["Original", "Truth"])  # Add img_predicted if available
-
+        models[modelname]['validation_results'] = validate_model(model_obj['model_obj'], data)
+    return models
 def test_model(model, data):
     ...
 
@@ -328,7 +311,7 @@ if __name__ == '__main__':
     with open("inputs/model_config.yaml", "r") as f:
         model_config = yaml.safe_load(f)
     
-    train_models(model_config, data)
-
+    model_dict = train_models(model_config, data)
+    validate_models(model_dict, data)
     stop_resource_utilization_thread(stop_event, logging_thread)
     plot_resource_utilization(cpu_usage, memory_usage, gpu_usage, timestamps, LPG.PLOTS_DIR)

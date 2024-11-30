@@ -50,12 +50,13 @@ Repo structure
     - Object detector implemented using YOLOv8
     - Model training: https://docs.ultralytics.com/modes/train/
     - Model validation: https://docs.ultralytics.com/modes/val/ 
-3. Optical Character Recognition (OCR) using EasyOCR 
+3. Optical Character Recognition (OCR) using EasyOCR or Tesseract 
     - Images are pre-processed before fed to OCR to convert to greyscale. Thresholding is applied as well 
     - Bounding boxes of license plates are fed to OCR model
     - Limitations
         - License plates of 
     - https://www.jaided.ai/easyocr/
+    - https://medium.com/geekculture/tesseract-ocr-understanding-the-contents-of-documents-beyond-their-text-a98704b7c655
     - https://pypi.org/project/easyocr/ 
     - https://www.jaided.ai/easyocr/documentation/ 
     - https://github.com/ankandrew/fast-plate-ocr

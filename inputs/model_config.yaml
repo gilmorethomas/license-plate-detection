@@ -2,7 +2,7 @@ default_configuration:
   model_type: 'yolov8m'
   seed: 42 # Seed for reproducibility
   model_directory: 'models' # Directory to save the model
-  load_saved_model: False  # Load saved models from the model directory instead of training
+  load_saved_model: True  # Load saved models from the model directory instead of training
   data_split: 
     train_split: 0.6 # Train split
     validation_split: 0.2 # Validation split
