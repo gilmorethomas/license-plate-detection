@@ -86,7 +86,15 @@ def train_model(model, model_config, defaults, data, verbose=True):
 
     # Build test / train split 
     # Randomly pre-filter the data based on the train, validation, and test split. If the sum of the splits is less than 1, the remaining data will be unused.
-    new_data, remaining_points = train_test_split(data, test_size=1 - (train_split + test_split + validation_split), random_state=model_config.get('seed', defaults['seed']))
+    if train_split + test_split + validation_split > 1:
+        raise ValueError("Sum of train, test, and validation splits must be less than or equal to 1")
+    elif train_split + test_split + validation_split == 1:
+        # Shuffle data 
+        new_data = data.sample(frac=1, random_state=model_config.get('seed', defaults['seed']))
+        # Make remaining data of size 0 with same columns as new_data
+        remaining_points = pd.DataFrame(columns=new_data.columns)
+    else: 
+        new_data, remaining_points = train_test_split(data, test_size=1 - (train_split + test_split + validation_split), random_state=model_config.get('seed', defaults['seed']))
     # Since the split is based on the original size of the data, we need to scale the split sizes based on the new data size
     adj_train_split = train_split / (train_split + test_split + validation_split)
     adj_test_split = test_split / (test_split + validation_split)
