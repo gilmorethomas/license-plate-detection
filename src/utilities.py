@@ -103,7 +103,54 @@ def overlay_boxes(img, box_list_dict):
 
         # img = cv2.rectangle(img=img, pt1=(x1, y1), pt2=(x2, y2), color=color, thickness=line_thickness, lineType=line_type)
         img_new = cv2.rectangle(img=img_new, pt1=(x1, y1), pt2=(x2, y2), color=color, thickness=line_thickness)
+        # Add additional text from the additional_info key
+        additional_info = box.get("additional_info", {})
+        if additional_info:
+            text = ', '.join([f"{k}: {v}" for k, v in additional_info.items()])
+            img_new = cv2.putText(img_new, text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
     return img_new
+
+def save_image(img, outdir, name): 
+    """Writes an image to disk
+
+    Args:
+        img (np.Array): Image to write
+        outdir (str, path-like): Output directory
+        name (str): Name of the image
+    """
+    if not path.exists(outdir):
+        os.makedirs(outdir)
+    # If we don't have the extension at the end of the file, add it
+    if not name.endswith('.png') or not name.endswith('.jpg'):
+        name = name + '.png'
+    cv2.imwrite(path.join(outdir, name), img)
+    
+def save_images(imgs, outdir, name):
+    """Writes a list of images to disk. Combines the images into a single image
+
+    Args:
+        imgs (list[np.Array]): List of images to write
+        outdir (str, path-like): Output directory
+        names (list[str]): List of names of the images
+    """
+    if not path.exists(outdir):
+        os.makedirs(outdir)
+    if not isinstance(imgs, list):
+        imgs = [imgs]
+    # Combine the images into a single image
+    img = [transforms.ToTensor()(i) for i in imgs]
+    max_height = max([i.shape[1] for i in img])
+    max_width = max([i.shape[2] for i in img])
+    # Pad with zeros to make all images the same size in height and width
+    img = [transforms.Pad((0, 0, max_width - i.shape[2], max_height - i.shape[1]))(i) for i in img]
+    # Use torch stack to combine the images
+
+    img_new = utils.make_grid(img)
+    # Convert to 0-255 range
+    img_new = img_new.mul(255).byte()
+    # Need to make sure the image is in the right format
+    img_new = np.transpose(img_new.numpy(), (1, 2, 0))
+    save_image(img_new, outdir, name)
 
 def show_multiple_images(imgs):
     imshow(utils.make_grid(imgs))

@@ -2,10 +2,11 @@ import os
 from os import path
 import string
 import easyocr
-from src.utilities import load_image, overlay_boxes, imshow
+from src.utilities import load_image, overlay_boxes, imshow, save_images, save_image
 import pandas as pd 
 # Initialize the OCR reader
 from ultralytics import YOLO
+
 
 reader = easyocr.Reader(['en'], gpu=False)
 
@@ -195,39 +196,41 @@ if __name__ == "__main__":
 
     # Overlay the bounding boxes on the image to verify 
     img2 = overlay_boxes(img, box_dict)
-    imshow([img, img2], "Combined Images", "matplotlib")
+    # imshow([img, img2], "Combined Images", "matplotlib")
 
     # Crop the image to get the license plate
     license_plate_crop = img[int(box_dict['y1']):int(box_dict['y2']), int(box_dict['x1']):int(box_dict['x2'])]
-    imshow([license_plate_crop], "License Plate Crop")
-    imshow([img, license_plate_crop], "Combined Images")
+    
+    # Read the license plate from cropped truth image
+    license_number, license_number_score = read_license_plate(license_plate_crop)
+    # imshow([license_plate_crop], "License Plate Crop")
+    # Combine the images side by side
+    # imshow([img, license_plate_crop], "Combined Images")
     model_obj = YOLO('yolov8m')
     
     # Assume that we know all the cars and already have those images
     license_plate_detects = simple_detector(license_plate_crop)
 
     img_overlayed = img 
-    for license_plate_detect in license_plate_detects: 
-        for license_plate in license_plate_detect.boxes.data.tolist():
-            # Overlay the bounding boxes on the image to verify
-            license_plate_dict = {'x1': license_plate[0], 'y1': license_plate[1], 'x2': license_plate[2], 'y2': license_plate[3]}
-            img_overlayed = overlay_boxes(img_overlayed, license_plate_dict)
-            x1, y1, x2, y2, score, class_id = license_plate
+    # for license_plate_detect in license_plate_detects: 
+    #     for license_plate in license_plate_detect.boxes.data.tolist():
+    #         # Overlay the bounding boxes on the image to verify
+    #         license_plate_dict = {'x1': license_plate[0], 'y1': license_plate[1], 'x2': license_plate[2], 'y2': license_plate[3], 'additional_info': {'score': license_plate[4], 'class_id': license_plate[5]}}
+    #         img_overlayed = overlay_boxes(img_overlayed, license_plate_dict)
+    #         x1, y1, x2, y2, score, class_id = license_plate
 
-            license_plate_crop = img[int(y1):int(y2), int(x1): int(x2), :]
+    #         license_plate_crop = img[int(y1):int(y2), int(x1): int(x2), :]
 
-            imshow([license_plate_crop], "License Plate Crop")
-            license_number, license_number_score = read_license_plate(license_plate_crop)
-            print(license_number, license_number_score)
-            if license_number is not None:
-                print("License Plate Number: ", license_number)
-            else:
-                print("License Plate Number: ", "Not Found")
+    #         # imshow([license_plate_crop], "License Plate Crop")
+    #         license_number, license_number_score = read_license_plate(license_plate_crop)
+    #         print(license_number, license_number_score)
+    #         if license_number is not None:
+    #             print("License Plate Number: ", license_number)
+    #         else:
+    #             print("License Plate Number: ", "Not Found")
     
-    imshow([img_overlayed], "License Plate Detection Model", "matplotlib")
-
-    import pdb; pdb.set_trace()
-
+    save_images([license_plate_crop, img_overlayed], path.join(dirname, '..', 'test_data'),  'final_license_plate')
+    x = 0 
 
     # Get the license plate coordinates    
     # Test the OCR reader
