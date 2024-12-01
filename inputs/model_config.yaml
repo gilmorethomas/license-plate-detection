@@ -51,7 +51,7 @@ default_configuration:
     dropout:            0.0     # Dropout rate for regularization in classification tasks, preventing overfitting by randomly omitting units during training.
     val:                True    # Enables validation during training, allowing for periodic evaluation of model performance on a separate dataset.
   validation_parameters: 
-    bypass_validation: False # Bypass validation and only run training
+    bypass_validation: True # Bypass validation 
     imgsz: 320 # Image size (width and height). All images resized to this 
     conf: 0.001 # Object confidence threshold 
     max_det: 100 # Maximum number of detections per image
@@ -59,7 +59,7 @@ default_configuration:
     save_json: True # Save detections as JSON
     save_hybrid: True # Save detections as hybrid
     plots: True # Plot detections. Generates and savess plots of predictions vs. ground truth 
-    exist_ok:           True   # If True, allows overwriting of an existing project/name directory. Useful for iterative experimentation without needing to manually clear previous outputs. Directory management is handled by the code, so keep this true
+    exist_ok: True   # If True, allows overwriting of an existing project/name directory. Useful for iterative experimentation without needing to manually clear previous outputs. Directory management is handled by the code, so keep this true
   doc: Note that anything that is not specified in the individual model will be taken from here. Almost all parameters from here can be overridden in the individual model configuration. See https://docs.ultralytics.com/modes/train/#train-settings for more details.
 model_metadata: 
   model_a: 

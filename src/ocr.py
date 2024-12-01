@@ -6,8 +6,11 @@ from src.utilities import load_image, overlay_boxes, imshow, save_images, save_i
 import pytesseract
 import cv2
 import pandas as pd 
+import numpy as np
+from os import makedirs
 # Initialize the OCR reader
 from ultralytics import YOLO
+from src.logger import logger as logging 
 
 
 reader = easyocr.Reader(['en'], gpu=False, detect_network='craft', recog_network='standard')
@@ -177,7 +180,7 @@ def read_license_plate(license_plate_crop, enforce_format=False, threshold=0.1, 
     if len(return_detections) == 0:
         return_detections.append({'x1': None, 'y1': None, 'x2': None, 'y2': None, 'text': None, 'score': None})
 
-    return return_detections
+    return pd.DataFrame(return_detections)
 
 
 def overlay_recognition_results(img, results):
@@ -256,20 +259,52 @@ def perform_ocr_of_single_img(img, bounding_box, out_dir, save_name='final_licen
 
     # Crop the image to get the license plate
     license_plate_crop = img[int(bounding_box['y1']):int(bounding_box['y2']), int(bounding_box['x1']):int(bounding_box['x2'])]
-    
+    if license_plate_crop.size == 0:
+        logging.warning(f"License plate crop for {save_name} is empty. Skipping OCR.")
+
+        return pd.DataFrame({'x1': -1, 'y1': -1, 'x2': -1, 'text': 'N/A', 'score': np.nan}, index=[0])
     # Read the license plate from cropped truth image
     gray, plate_treshold, preprocessed_img = preprocess_img(license_plate_crop)
 
     # Save the plate_threshold image
 
     results = read_license_plate(preprocessed_img, enforce_format=False)
-    img_with_results_preprocessesd = overlay_recognition_results(preprocessed_img, results)
     if save_image_debug: 
+        img_with_results_preprocessesd = overlay_recognition_results(preprocessed_img, results)
         save_images([img, license_plate_crop, img_with_results_preprocessesd], out_dir, save_name)
         save_image(plate_treshold, out_dir, save_name + '_treshold')
         save_image(gray, out_dir, save_name + '_gray')
         save_image(preprocessed_img, out_dir, save_name + '_preprocess')
     return results
+
+def perform_ocr_on_df_images(model_dict, output_dir, verbose=False): 
+    """ Perform OCR on the images in the dataframe. 
+    """
+    logging.info("Performing OCR on the images in the dataframe.")
+    for model_name, this_model_dict in model_dict.items():
+        results = []
+
+        for idx, row in this_model_dict['test_results'].iterrows():
+            img = load_image(row['imgpath'])
+            res = perform_ocr_of_single_img(img, row['pred_box'], output_dir, save_name=row['imgname'], save_image_debug=verbose)
+            # rename res x1, y1, x2, y2 to ocr_text_x1, ocr_text_y1, ocr_text_x2, ocr_text_y2
+            res = res.rename(columns={'x1': 'ocr_text_x1', 'y1': 'ocr_text_y1', 'x2': 'ocr_text_x2', 'y2': 'ocr_text_y2', 'text': 'ocr_text', 'score': 'ocr_score'})
+            res['imgname'] = row['imgname']
+            results.append(res) 
+        these_results = pd.concat(results).reset_index(drop=True)
+        these_results['imgname'] = these_results['imgname'].astype(str)
+        this_model_dict['test_results']['imgname'] = this_model_dict['test_results']['imgname'].astype(str)
+        
+        # Merge this with the original dataframe
+        merged_results = these_results.join(this_model_dict['test_results'], how='outer', rsuffix='_r')
+        
+        # Merge this with the original dataframeke
+        makedirs(output_dir, exist_ok=True)
+        merged_results.to_csv(path.join(output_dir, model_name + '_ocr_results.csv'), index=False)
+        merged_results['model_name'] = model_name   
+        results.append(merged_results)
+        model_dict[model_name]['ocr_results'] = these_results
+    return model_dict
 
 if __name__ == "__main__":
     # Load the image and labels

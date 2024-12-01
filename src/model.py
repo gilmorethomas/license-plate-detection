@@ -10,24 +10,58 @@ from src.globals import LICENSE_PLATE_GLOBALS as LPG
 from src.utilities import load_image, imshow, overlay_boxes, set_seed, verify_device, start_resource_utilization_thread, stop_resource_utilization_thread, plot_resource_utilization, convert_xy_bounds_to_centered_xywh
 from src.pulldataset import createYamlFormattedData
 
-def test_model(model, data):
-    ...
+def test_models(models, model_configs, output_dir):
+    """Gets the test results for all models, which is comprised of detections on the test data
 
-def test_models(models, model_configs):
-    return models
-    input_df = model_configs['test_data'] 
+    Args:
+        models (dict): Dictionary of model names to model objects and metadata
+        model_configs (dict): Model configuration, loaded from yaml 
 
-    defaults = model_configs['default_configuration']
-    # for modelname, model_config in model_configs['model_metadata'].items():
+    Returns:
+        models: Dictionary of model names to model objects updated with test results
+    """
 
-    #     models[modelname]['test_results'] = test_model(
-    #         model=models[modelname]['model_obj'], 
-    #         modelname=modelname,
-    #         output_dir=models[modelname]['output_dir'],
-    #         test_args=model_config.get('test_parameters', defaults['test_parameters']),
-    #         seed=model_config.get('seed', defaults['seed']),
-    #         device=verify_device(model_config.get('device', defaults['device'])),
-    #         interface_yaml=models[modelname]['interface_yaml'])
+    for modelname, model_config in model_configs['model_metadata'].items():
+        model = models[modelname]['model_obj']
+        test_df = models[modelname]['data']['test']
+        results = model(test_df['imgpath'].tolist())
+        results_dfs = [] 
+
+        # pull the df result, also adding on the image path for each result
+
+        for result in results:
+            result_df = result.to_df()
+            result_df['imgpath'] = result.path
+            results_dfs.append(result_df)
+        results_df = pd.concat(results_dfs, axis=0)
+        results_df = pd.merge(results_df, test_df, on='imgpath', how='outer')
+        # If there are any nan's, make a column for "detected" and set it to False
+        results_df['is_detected'] = results_df['box'].apply(lambda x: False if pd.isna(x) else True)
+
+        # Convert the results to the correct format, pulling out the box coordinates and converting them to the correct format. This pulls 'x1', 'y1', 'x2', 'y2' from the 'box' column. Also account for the fact that box may be a NaN value. Fill the nans with a dictionary of -1 values
+        results_df['box'] = results_df['box'].apply(lambda x: {'x1': -1, 'y1': -1, 'x2': -1, 'y2': -1} if pd.isna(x) else x)
+        results_df.rename(columns={'box': 'pred_box'}, inplace=True)
+        results_df['pred_x1'] = results_df['pred_box'].apply(lambda x: x['x1'])
+        results_df['pred_y1'] = results_df['pred_box'].apply(lambda x: x['y1'])
+        results_df['pred_x2'] = results_df['pred_box'].apply(lambda x: x['x2'])
+        results_df['pred_y2'] = results_df['pred_box'].apply(lambda x: x['y2'])
+        # Pull out img width and height
+        results_df['pred_obj_width'] = results_df['pred_y2'] - results_df['pred_y1']
+        results_df['pred_obj_height'] = results_df['pred_x2'] - results_df['pred_x1']
+        # Convert the box coordinates to the normalized format
+        results_df['pred_ymin'] = results_df['pred_y1'] 
+        results_df['pred_xmax'] = results_df['pred_x2'] 
+        results_df['pred_xmin'] = results_df['pred_x1'] 
+        results_df['pred_ymax'] = results_df['pred_y2'] 
+        results_df['pred_xmin_norm'] = results_df['pred_xmin'] / results_df['img_width']
+        results_df['pred_xmax_norm'] = results_df['pred_xmax'] / results_df['img_width']
+        results_df['pred_ymin_norm'] = results_df['pred_ymin'] / results_df['img_height']
+        results_df['pred_ymax_norm'] = results_df['pred_ymax'] / results_df['img_height']
+
+        # Combine this with the test_df on the 'imgpath' column. We want to use an outer with results and test df, since there may be imagees with no detects or multiple detects
+        models[modelname]['test_results'] = results_df
+        makedirs(output_dir, exist_ok=True)
+        results_df.to_csv(path.join(output_dir, f'{modelname}_test_results.csv'))
     return models
 
 def validate_models(models, model_configs):

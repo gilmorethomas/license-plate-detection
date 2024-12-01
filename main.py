@@ -11,6 +11,7 @@ from os import path, makedirs
 from src.plotting import pie_chart
 import pandas as pd 
 from src.globals import LICENSE_PLATE_GLOBALS as LPG 
+from src.ocr import perform_ocr_on_df_images 
 import time
 from inspect import signature, Parameter
 
@@ -53,8 +54,12 @@ if __name__ == '__main__':
     model_dict = test_models(
         models=model_dict, 
         model_configs=model_config,
+        output_dir=path.join(LPG.OUTPUTS_DIR, 'test_data')
     )
-    make_output_df(model_dict, LPG.OUTPUTS_DIR)
+
+    model_dict = perform_ocr_on_df_images(model_dict, path.join(LPG.OUTPUTS_DIR, 'ocr_results'), False)
+    
+    # make_output_df(model_dict, LPG.OUTPUTS_DIR)
     # model_df = pd.DataFrame(model_dict)
     # model_df.to_csv(path.join(LPG.OUTPUTS_DIR, 'models.csv'))
 
