@@ -11,7 +11,7 @@ import glob
 import kagglehub
 import xml.etree.ElementTree as xmlet
 import pandas as pd
-from src.utilities import imshow_from_path
+from src.utilities import imshow_from_path, convert_xy_bounds_to_centered_xywh
 from src.logger import logger as logging 
 import shutil
 
@@ -114,13 +114,14 @@ def UpdateDataFrameToYamlFormat(split_name, Input_Dataframe):
 
     print(f"Created '{images_path}' and '{labels_path}'")
 
-def PullInPlateTruth():
+def PullInPlateTruth(df):
 
     # Data from going through the dataset
     # N/A means that the plate was not visible or readable
     # Can be mutiple plates in one image
 
     data = """ 
+    Car_Photo_Id Plate_Number
     0   KL01CA2555
     1   PG MN112
     10  TN 37 C5 2765
@@ -591,16 +592,108 @@ def PullInPlateTruth():
     processed_data = [line.split(maxsplit=1) for line in lines]
 
     # Convert to DataFrame
-    df = pd.DataFrame(processed_data[1:], columns=processed_data[0])
+    new_df = pd.DataFrame(processed_data[1:], columns=processed_data[0])
 
     # Handle duplicates in the index column
-    df["Car_Photo_Id"] = df["Car_Photo_Id"].astype(str)
-    df["Plate_Number"] = df["Plate_Number"].astype(str)
+    new_df["Car_Photo_Id"] = new_df["Car_Photo_Id"].astype(str)
+    new_df["imgname"] = "Cars" + new_df["Car_Photo_Id"]
+    new_df["Plate_Number"] = new_df["Plate_Number"].astype(str)
 
+    # Since we can have multiple plates in the same image, need to do an outer join
     # Display the DataFrame
-    print(df)
+    merged_df = pd.merge(df, new_df, on="imgname", how="outer")
+    return merged_df
 
-    return df
+
+def createYamlFormattedData(train_df, val_df, test_df, output_dir, save=True):
+    """Creates the YOLO format for the data and saves the labels and images to the appropriate directories
+
+    Args:
+        train_df (pd.DataFrame): Training data containing image paths and bounding box coordinates
+        val_df (pd.DataFrame): Validation data containing image paths and bounding box coordinates
+        test_df (pd.DataFrame): Testing dataframe
+        output_dir (str, path-like): Output directory
+    
+    Returns:
+        str: Path to the datasets.yaml file
+    """
+    new_train_df = updateDataFrameToYamlFormat('train', train_df, output_dir=output_dir, save=save)
+    new_val_df = updateDataFrameToYamlFormat('val', val_df, output_dir=output_dir, save=save)
+    new_test_df = updateDataFrameToYamlFormat('test', test_df, output_dir=output_dir, save=save)
+
+    datasets_yaml = f'''
+    path: {output_dir}
+
+    train: train/images
+    val: val/images
+    test: test/images
+
+    # number of classes
+    nc: 1
+
+    # class names
+    names: ['license_plate']
+    '''
+
+    # Write the content to the datasets.yaml file
+    output_file_name = path.join(output_dir, 'datasets.yaml')
+    if save:
+        with open(output_file_name, 'w') as file:
+            logging.info(f"Writing datasets.yaml to {path.join(output_dir, 'datasets.yaml')}")
+            file.write(datasets_yaml)
+    
+    return output_file_name, new_train_df, new_val_df, new_test_df
+    
+def updateDataFrameToYamlFormat(split_name, df, output_dir, save=True):
+    """Converts a DataFrame to the YOLO format and saves the labels and images to the appropriate directories
+
+    Args:
+        split_name (str): Name of the split (train, test, validation)
+        output_dir (pd.DataFrame): DataFrame containing image paths and bounding box coordinates
+        output_dir (str): Output directory to save the labels and images
+        save (bool): Whether to save the labels and images to the directories
+    """
+    # Define paths for labels and images
+    labels_path = os.path.join(output_dir, split_name, 'labels') 
+    images_path = os.path.join(output_dir, split_name, 'images')
+    output_df = df.copy()
+    if save:
+        # Create directories if they don't exist
+        os.makedirs(labels_path, exist_ok=True)
+        os.makedirs(images_path, exist_ok=True)
+
+    # Iterate over each row in the DataFrame
+    for _, row in df.iterrows():
+        img_name = row['imgname']
+        img_extension = '.png'
+
+        # Calculate YOLO format coordinates, which are normalized and based on box center and width/height
+        row_df = convert_xy_bounds_to_centered_xywh(row)
+        x_center = row_df['x_center']
+        y_center = row_df['y_center']
+        width = row_df['width']
+        height = row_df['height']
+        output_df.loc[output_df['imgname'] == img_name, 'x_center'] = x_center
+        output_df.loc[output_df['imgname'] == img_name, 'y_center'] = y_center
+        output_df.loc[output_df['imgname'] == img_name, 'width'] = width
+        output_df.loc[output_df['imgname'] == img_name, 'height'] = height
+
+        # Save labels in YOLO format
+        label_path = os.path.join(labels_path, f'{img_name}.txt')
+        output_df.loc[output_df['imgname'] == img_name, 'label_path'] = label_path
+        if save:
+            with open(label_path, 'w') as file:
+                file.write(f"0 {x_center:.4f} {y_center:.4f} {width:.4f} {height:.4f}\n")
+
+            # Copy image to the images directory
+            try:
+                shutil.copy(row['imgpath'], os.path.join(images_path, img_name + img_extension))
+            except Exception as e:
+                logging.error(f"Failed to copy image {row['imgpath']} to {os.path.join(images_path, img_name + img_extension)}: {e}")
+    if save:
+        logging.info(f"Created '{images_path}' and '{labels_path}'")
+    return output_df
+
 
 if __name__ == "__main__":
     datasetpath = download_dataset()

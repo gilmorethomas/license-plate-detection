@@ -3,19 +3,19 @@ default_configuration:
   seed: 42 # Seed for reproducibility
   model_directory: 'models' # Directory to save the model
   load_saved_model: True  # Load saved models from the model directory instead of training
+  device: "cpu" # Device to run the model on. cpu is standard for most, mps available for Apple Silicon with Metal Performance Shaders (MPS). Select 0 or 1 for GPU 
   data_split: 
     train_split: 0.6 # Train split
     validation_split: 0.2 # Validation split
     test_split: 0.2 # Test split
   training_parameters: # 
     epochs: 10
-    device: "cpu" # Device to run the model on. cpu is standard for most, mps available for Apple Silicon with Metal Performance Shaders (MPS). Select 0 or 1 for GPU 
     batch: 64 # Batch size 
     imgsz: 320 # Image size (width and height) for training
     cache: 'ram' # Cache images for faster training. Options: 'ram' or 'disk'. 'ram' is faster but uses more memory. 'disk' is slower but uses less memory. 'ram' is not deterministic.
     time: 2 # Max time for training, in hours
     plots: True # Plot training results
-
+    exist_ok:           True   # If True, allows overwriting of an existing project/name directory. Useful for iterative experimentation without needing to manually clear previous outputs. Directory management is handled by the code, so keep this true
     #### The below are defaults. Just putting them for completeness and ease of access 
     patience:           100     # Number of epochs to wait without improvement in validation metrics before early stopping the training. Helps prevent overfitting by stopping training when performance plateaus.
     save:               True    # Save the model after training
@@ -33,7 +33,6 @@ default_configuration:
     fraction:           1.0     # Specifies the fraction of the dataset to use for training. Allows for training on a subset of the full dataset, useful for experiments or when resources are limited.
     profile:            False   # Enables profiling of ONNX and TensorRT speeds during training, useful for optimizing model deployment.
     freeze:             None    # Freezes the first N layers of the model or specified layers by index, reducing the number of trainable parameters. Useful for fine-tuning or transfer learning.
-    # exist_ok:         False   # If True, allows overwriting of an existing project/name directory. Useful for iterative experimentation without needing to manually clear previous outputs.
     lr0:                0.01    # Initial learning rate (i.e. SGD=1E-2, Adam=1E-3) . Adjusting this value is crucial for the optimization process, influencing how rapidly model weights are updated.
     lrf:                0.01    # Final learning rate as a fraction of the initial rate = (lr0 * lrf), used in conjunction with schedulers to adjust the learning rate over time.
     momentum:           0.937   # Momentum factor for SGD or beta1 for Adam optimizers, influencing the incorporation of past gradients in the current update.
@@ -51,6 +50,16 @@ default_configuration:
     mask_ratio:         4       # Downsample ratio for segmentation masks, affecting the resolution of masks used during training.
     dropout:            0.0     # Dropout rate for regularization in classification tasks, preventing overfitting by randomly omitting units during training.
     val:                True    # Enables validation during training, allowing for periodic evaluation of model performance on a separate dataset.
+  validation_parameters: 
+    bypass_validation: False # Bypass validation and only run training
+    imgsz: 320 # Image size (width and height). All images resized to this 
+    conf: 0.001 # Object confidence threshold 
+    max_det: 100 # Maximum number of detections per image
+    iou: 0.6 # IOU threshold for NMS
+    save_json: True # Save detections as JSON
+    save_hybrid: True # Save detections as hybrid
+    plots: True # Plot detections. Generates and savess plots of predictions vs. ground truth 
+    exist_ok:           True   # If True, allows overwriting of an existing project/name directory. Useful for iterative experimentation without needing to manually clear previous outputs. Directory management is handled by the code, so keep this true
   doc: Note that anything that is not specified in the individual model will be taken from here. Almost all parameters from here can be overridden in the individual model configuration. See https://docs.ultralytics.com/modes/train/#train-settings for more details.
 model_metadata: 
   model_a: 
