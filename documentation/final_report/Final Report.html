@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>  
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <title>License Plate Detection | ECE, Virginia Tech | Fall 2024: ECE 4554/5554</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!-- Bootstrap styles -->  
+  <link href="css/bootstrap.css" rel="stylesheet">
+  <style>
+    body {
+      padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
+	  background-color: #f0f0f0; /* Light gray background color */
+    }
+    .vis {
+      color: #3366CC;
+    }
+    .data {
+      color: #FF9900;
+    }
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 10px;
+    }
+    .image-grid img {
+      width: 100%;
+      height: auto;
+    }
+  </style>
+  
+  <link href="css/bootstrap-responsive.min.css" rel="stylesheet">
+  
+  <!-- HTML5 shim for IE6-8 support of HTML5 elements --><!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+</head>
+
+<body>
+<div class="container">
+  <div class="page-header">
+
+    <!-- Title and Name --> 
+    <h1>License Plate Detection</h1> 
+    <span style="font-size: 20px; line-height: 1.5em;"><strong>Thomas Gilmore, Joseph Wysocki</strong></span><br>
+    <span style="font-size: 18px; line-height: 1.5em;">Fall 2024 ECE 4554/5554 Computer Vision: Course Project</span><br>
+    <span style="font-size: 18px; line-height: 1.5em;">Virginia Tech</span>
+    <hr>
+
+    <!-- Abstract -->
+    <h3>Abstract</h3>
+    <p>The increasing need for automated vehicle identification systems has driven the development of efficient license plate detection. This project aims to develop a system using a deep learning model, specifically YOLOv8, to detect and localize license plates in various environmental conditions. The approach involves compiling a diverse dataset, preprocessing images to enhance quality, and implementing a You Only Look Once (YOLO)v8-based detection model. Additionally, an Optical Character Recognition (OCR) system is used to extract the license plate number from the detected plates. The main result demonstrates significant potential for object detection and accurate license plate recognition in challenging environments.</p>
+
+    <!-- Teaser figure -->
+    <h3>Example of License Plate Detection</h3>
+    <p>A sample detection result from the developed system: The system processes a given photo, detects the license plate, and accurately reports the license plate number.</p>
+    <div style="text-align: center;">
+      <img style="height: 200px;" alt="Sample Detection" src="mainfig2.jpg">
+    </div>
+
+    <br><br>
+    
+    <!-- Introduction -->
+    <h3>Introduction</h3>
+    <p>The growing demand for automated vehicle identification systems has highlighted the importance of efficient license plate detection. Such systems play a critical role in various applications, including law enforcement for tracking stolen vehicles, parking management for efficient space utilization, and traffic monitoring for maintaining road safety <a href="#reference1">[1]</a>. This project aims to develop a license plate detection system.</p>
+
+    <br><br>
+    
+    <!-- Approach -->
+    <h3>Approach</h3>
+    <p>To achieve effective license plate detection, we utilized a combination of image processing techniques and deep learning algorithms. The approach involved:</p>
+    <ul>
+      <li><strong>Data Collection:</strong> This dataset contains 433 images with bounding box annotations of the car license plates within the image. Annotations are provided in the PASCAL VOC format. Sourced from <a href="https://www.kaggle.com/datasets/andrewmvd/car-plate-detection">Kaggle</a>. This data fit most of our needs by pointing out the license plate; however, it did not include the license plate information, which was manually annotated later. The figure below shows example photos from the dataset along with how the annotations correspond to each photo and the truth box placed on each photo.</li>
+      <div style="text-align: center;">
+        <img style="height: 300px;" alt="Sample Data" src="KaggleDataExample.jpg">
+      </div>
+      <li><strong>Preprocessing:</strong> The images underwent several preprocessing steps to prepare them for the YOLO model. This included normalizing the values for the bounding boxes around each license plate. This required finding the original photo size and normalizing the bounding box coordinates to that size to ensure proper scaling. Additionally, the ground truth data for the license plates was manually added, and the data was formatted into a YAML file to be fed into the YOLO model.</li>
+      <div style="text-align: center;">
+        <img style="height: 250px;" alt="Sample Input" src="NormalizeExample.jpg">
+      </div>
+      <li><strong>Detection Model:</strong> We implemented a deep learning-based object detection architecture, specifically selecting YOLOv8 <a href="#reference6">[6]</a> due to its balance between speed and accuracy for real-time applications. YOLOv8 (You Only Look Once version 8) is a state-of-the-art object detection model known for its efficiency and high performance. It operates by dividing the input image into a grid and predicting bounding boxes and class probabilities for each grid cell. This allows the model to detect multiple objects within an image in a single forward pass, making it highly suitable for real-time applications. YOLOv8 improves upon its predecessors with enhanced architecture, better feature extraction, and more accurate bounding box predictions. The model was trained using the annotated dataset, and various hyperparameters were tuned to optimize its performance for license plate detection.</li>
+      <li><strong>Model Evaluation:</strong> The model's performance was evaluated primarily on its precision in detecting the actual license number plate. The evaluation metrics included mean Average Precision (mAP) at different IoU thresholds (0.5 to 0.95), precision, recall, and F1-score. The results demonstrated significant potential for real-time object detection in challenging environments.</li>
+    </ul>
+    <br><br>
+    
+    <!-- Experiments and Results -->
+    <h3>Results</h3>
+    <p>To prepare the data for training, we first split the dataset into training, validation, and test sets. This ensures that the model is trained on one subset of the data, validated on another, and tested on a completely separate subset to evaluate its performance. The split ratios for training, validation, and test sets were defined in the model configuration, with typical values being 60% for training, 20% for validation, and 20% for testing. The data was then saved into the model directory for easy access during training. The training process involved loading the default training parameters from the model configuration and overriding them with any specific parameters provided in the model's configuration. The model was trained using the YOLOv8 architecture, with the training results saved and the model exported in ONNX format for further use. This structured approach ensures that the model is robust and its performance can be reliably evaluated on unseen data.</p>
+    <!-- Main Results Figure --> 
+    <div style="text-align: center;">
+      <img style="height: 350px;" alt="Results" src="DataSplit.png">
+    </div>
+    <p>The training process involved loading the default training parameters from the model configuration and overriding them with any specific parameters provided in the model's configuration. The YOLOv8 model was trained using the prepared dataset, with the training data used to update the model's weights and the validation data used to monitor the model's performance and prevent overfitting. During training, various hyperparameters such as learning rate, batch size, and number of epochs were tuned to optimize the model's performance. The training results were saved, and the model was exported in ONNX format for further use. This structured approach ensures that the model is robust and its performance can be reliably evaluated on unseen data.</p>
+    <div style="text-align: center;">
+      <img style="height: 350px;" alt="Results2" src="Training_Validation.jpg">
+    </div>
+    <p>To thoroughly evaluate the performance of the YOLOv8 model, several metrics and visualizations were used. The confusion matrix provides a detailed breakdown of the model's predictions, showing the true positives, false positives, true negatives, and false negatives, which helps in understanding the model's accuracy and error distribution. The F1 curve illustrates the balance between precision and recall across different thresholds, highlighting the model's effectiveness in handling imbalanced data. The labels correlogram visualizes the correlation between different classes, offering insights into potential misclassifications. The precision (P) curve shows the precision of the model at various confidence thresholds, while the precision-recall (PR) curve plots precision against recall, providing a comprehensive view of the model's performance across different recall levels. These metrics and visualizations collectively ensure a robust evaluation of the model's detection capabilities.</p>
+    <div class="image-grid">
+      <img src="confusion_matrix_normalized.png" alt="Confusion Matrix">
+      <img src="F1_curve.png" alt="F1 Curve">
+      <img src="labels_correlogram.jpg" alt="Labels Correlogram">
+      <img src="P_curve.png" alt="Precision Curve">
+      <img src="PR_curve.png" alt="PR Curve">
+	  <img src="results.png" alt="Model Results">
+    </div>
+	<p>The model demonstrates robust performance across multiple evaluation metrics, indicating its reliability in detecting and classifying license plates. The normalized confusion matrix reveals that the model achieves a high accuracy rate of 95% for identifying license plates while maintaining a low false positive rate of 5% for the background class. The F1 confidence curve shows an F1 score of 0.91 for all classes at a confidence threshold of 0.405, suggesting a strong balance between precision and recall at this level. Additionally, the precision-confidence curve indicates perfect precision (1.0) at a confidence threshold of 0.807, meaning that all predictions above this threshold are accurate, albeit at the potential expense of reduced recall. The precision-recall curve further supports the model's effectiveness, with a mean Average Precision (mAP) of 0.956 at an Intersection over Union (IoU) threshold of 0.5, reflecting its ability to accurately detect and retrieve most relevant instances. These results highlight the model’s capability to deliver high precision and recall, making it well-suited for applications requiring reliable license plate detection with minimal misclassification.<p>
+    <p>In addition to detecting and localizing license plates using the YOLOv8 model, our system incorporates Optical Character Recognition (OCR) to extract the license plate numbers from the detected plates. We utilized two OCR engines: EasyOCR and Tesseract. EasyOCR is known for its ease of use and support for multiple languages, while Tesseract is a widely-used open-source OCR engine with robust text recognition capabilities.<p>
+	<p>The OCR process begins by cropping the detected license plate regions from the images. These cropped regions are then preprocessed to enhance text visibility, including converting the images to grayscale and applying thresholding techniques. The preprocessed images are fed into the OCR engine, which extracts the text from the license plates. The extracted text is then validated and formatted to ensure it complies with standard license plate formats.<p>
+    <div class="image-grid">
+      <img src="ocr_example.png" alt="OCR Example">
+      <img src="OCR_Process.png" alt="OCR Process">
+	</div>
+	<p>By integrating OCR with our license plate detection system, we can accurately identify and read license plate numbers, making the system suitable for various applications such as automated vehicle identification, law enforcement, and parking management.<p>
+
+	<br><br>
+    
+    <!-- Qualitative Results -->
+    <h3>Qualitative Results</h3>
+    <p>Visual examples showcasing the system’s successful detections and failures are provided below:</p>
+    
+    <div style="text-align: center;">
+      <img style="height: 300px;" alt="License Plate Detection" src="Output.jpg">
+    </div>
+
+    <br><br>
+
+    <!-- Conclusion -->
+    <h3>Conclusion</h3>
+    <p>This project successfully developed a license plate detection system that leverages deep learning and image processing techniques. The YOLOv8 model demonstrated significant potential for real-time object detection in challenging environmental conditions, achieving high precision and recall in detecting license plates. The integration of OCR further enhanced the system's capabilities by accurately extracting license plate numbers from the detected plates.</p>
+	<p>While the current system performs well, there are opportunities for improvement. One potential enhancement is to implement a two-stage detection process. In the first stage, the system would detect the vehicle, and in the second stage, it would focus on detecting the license plate within the identified vehicle region. This approach could reduce the risk of false positives by limiting the search area for license plates, thereby minimizing the chances of detecting background elements as license plates.<p>
+	<p>Future work could also involve expanding the dataset to include more diverse license plate designs and environmental conditions, further optimizing the model's hyperparameters, and exploring advanced OCR techniques to improve text recognition accuracy. By addressing these areas, we can enhance the robustness and reliability of the license plate detection system, making it even more effective for real-world applications.<p>
+    <p>Overall, this project demonstrates the feasibility and effectiveness of combining deep learning-based object detection with OCR for automated license plate recognition, paving the way for more advanced and reliable vehicle identification systems.<p>
+	<br><br>
+
+    <!-- References -->
+    <h3>References</h3>
+    <ul>
+      <li><a href="https://sensordynamics.com.au/what-is-license-plate-recognition/" target="_blank">What Is License Plate Recognition (LPR)? Everything You Need To Know.</a></li>
+      <li><a href="https://www.kaggle.com/" target="_blank">Kaggle</a></li>
+      <li><a href="https://datasetninja.com/" target="_blank">DataSetNinja</a></li>
+      <li><a href="https://datasetninja.com/car-license-plate" target="_blank">Car License Plate Dataset</a></li>
+      <li><a href="https://www.kaggle.com/datasets/tolgadincer/us-license-plates" target="_blank">U.S. License Plates</a></li>
+      <li><a href="https://yolov8.com/" target="_blank">YOLOv8</a></li>
+      <li><a href="https://www.geeksforgeeks.org/detect-and-recognize-car-license-plate-from-a-video-in-real-time/" target="_blank">Picture 1</a></li>
+      <li><a href="https://signsandtagsonline.com/products/custom-louisiana-state-our-invironment-our-future-personalized-license-plate" target="_blank">Picture 2a</a></li>
+      <li><a href="https://www.newsweek.com/24-vehicles-look-forward-2024-1853505" target="_blank">Picture 2b</a></li>
+    </ul>
+
+    <hr>
+    <footer>
+      <p>© 2024 Thomas Gilmore, Joseph Wysocki</p>
+    </footer>
+  </div>
+</div>
+
+</body>
+</html>
