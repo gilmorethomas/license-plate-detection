@@ -57,7 +57,7 @@ if __name__ == '__main__':
         output_dir=path.join(LPG.OUTPUTS_DIR, 'test_data')
     )
 
-    model_dict = perform_ocr_on_df_images(model_dict, path.join(LPG.OUTPUTS_DIR, 'ocr_results'), False)
+    model_dict = perform_ocr_on_df_images(model_dict, False)
     
     # make_output_df(model_dict, LPG.OUTPUTS_DIR)
     # model_df = pd.DataFrame(model_dict)

@@ -3,6 +3,7 @@ from os import path
 import string
 import easyocr
 from src.utilities import load_image, overlay_boxes, imshow, save_images, save_image
+from src.plotting import histogram
 import pytesseract
 import cv2
 import pandas as pd 
@@ -11,7 +12,7 @@ from os import makedirs
 # Initialize the OCR reader
 from ultralytics import YOLO
 from src.logger import logger as logging 
-
+import Levenshtein as lev
 
 reader = easyocr.Reader(['en'], gpu=False, detect_network='craft', recog_network='standard')
 
@@ -277,11 +278,12 @@ def perform_ocr_of_single_img(img, bounding_box, out_dir, save_name='final_licen
         save_image(preprocessed_img, out_dir, save_name + '_preprocess')
     return results
 
-def perform_ocr_on_df_images(model_dict, output_dir, verbose=False): 
+def perform_ocr_on_df_images(model_dict, verbose=False): 
     """ Perform OCR on the images in the dataframe. 
     """
     logging.info("Performing OCR on the images in the dataframe.")
     for model_name, this_model_dict in model_dict.items():
+        output_dir = path.join(this_model_dict['output_dir'], 'ocr_results')
         results = []
 
         for idx, row in this_model_dict['test_results'].iterrows():
@@ -297,14 +299,53 @@ def perform_ocr_on_df_images(model_dict, output_dir, verbose=False):
         
         # Merge this with the original dataframe
         merged_results = these_results.join(this_model_dict['test_results'], how='outer', rsuffix='_r')
-        
+
+        # Calculate the Levenshtein distance between the OCR text and the license plate text. If there is no license plate text (ocr_text or Plate Number is None or nan), set the distance to -1
+        merged_results['levenshtein_distance'] = merged_results.apply(lambda x: lev.distance(str(x['ocr_text']), str(x['Plate_Number'])) if pd.notnull(x['ocr_text']) and pd.notnull(x['Plate_Number']) else -1, axis=1)
+        # Calculate the Levenshtein similarity between the OCR text and the license plate text. If there is no license plate text (ocr_text or Plate Number is None or nan), set the similarity to -1
+        merged_results['levenshtein_similarity'] = merged_results.apply(lambda x: lev.ratio(str(x['ocr_text']), str(x['Plate_Number'])) if pd.notnull(x['ocr_text']) and pd.notnull(x['Plate_Number']) else -1, axis=1)
+        merged_results['ocr_correct'] = merged_results.apply(lambda x: x['ocr_text'] == x['Plate_Number'], axis=1)
+
         # Merge this with the original dataframeke
         makedirs(output_dir, exist_ok=True)
         merged_results.to_csv(path.join(output_dir, model_name + '_ocr_results.csv'), index=False)
         merged_results['model_name'] = model_name   
         results.append(merged_results)
         model_dict[model_name]['ocr_results'] = these_results
+        create_ocr_performance_plots(merged_results, output_dir)
     return model_dict
+
+def create_ocr_performance_plots(df, output_dir): 
+    """ Create the OCR performance plots. 
+    Args: 
+        df (pd.DataFrame): The dataframe containing the OCR results.
+    """
+    logging.info("Creating OCR performance plots")
+    # Create a histogram of the OCR scores
+    histogram(df, x='ocr_score', title='OCR Score Distribution', filename='ocr_score_distribution', output_dir=output_dir, save_png=True, save_html=True)
+    # Create a dataframe where the number of detections is counted. This is determined by the number of instances of the same image name
+    detection_counts = df.groupby('imgname').size().reset_index(name='detection_count')
+    # Create a histogram of the number of detections per image
+    histogram(detection_counts, x='detection_count', title='Number of OCR Detections per Image', filename='ocr_detections_per_image', output_dir=output_dir, save_png=True, save_html=True)
+    # Create a histogram of the top 10 most common OCR detections and least common OCR detections 
+    # Get the top 10 most common detections
+    top_10 = detection_counts.nlargest(10, 'detection_count')
+    histogram(top_10, 'detection_count', 'Top 10 Most Common OCR Detections', 'ocr_top_10', output_dir, save_png=True, save_html=True)
+    # Get the 10 least common detections
+    bottom_10 = detection_counts.nsmallest(10, 'detection_count')
+    histogram(bottom_10, 'detection_count', 'Top 10 Least Common OCR Detections', 'ocr_bottom_10', output_dir, save_png=True, save_html=True)
+    # Calculate the accuracy of the OCR detections
+    # Get the number of correct detections
+    # Create a histogram of the number of correct detections. 
+    histogram(df, 'ocr_correct', 'OCR Correct Distribution', 'ocr_correct_distribution', output_dir, save_png=True, save_html=True)
+
+    # Calculate the accuracy of detections, given by the similarity of the OCR text to the license plate text. 
+    # This is done using Levenshtein distance
+    # Create a histogram of the Levenshtein distance
+    histogram(df, 'levenshtein_distance', 'Levenshtein Distance Distribution', 'levenshtein_distance_distribution', output_dir, save_png=True, save_html=True, d_levels=[-1])
+    # Create a histogram of the Levenshtein similarity
+    histogram(df, 'levenshtein_similarity', 'Levenshtein Similarity Distribution', 'levenshtein_similarity_distribution', output_dir, save_png=True, save_html=True, d_levels=[-1])
+    return df    
 
 if __name__ == "__main__":
     # Load the image and labels
@@ -375,3 +416,7 @@ if __name__ == "__main__":
     results = perform_ocr_of_single_img(img, box_dict, path.join(dirname, '..', 'test_data'), save_name='license_plate_210')
     df = pd.DataFrame(results)
     df.to_csv(path.join(dirname, '..', 'test_data', 'license_plate_210.csv'), index=False)
+
+    # Perform OCR on the entire dataframe
+    ocr_results = pd.read_csv(path.join(dirname, '..', 'test_data', 'model_a_ocr_results.csv'))
+    ocr_results = perform_ocr_on_df_images(ocr_results, path.join(dirname, '..', 'test_data', 'ocr_results'), verbose=True)

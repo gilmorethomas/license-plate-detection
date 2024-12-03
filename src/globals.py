@@ -7,6 +7,7 @@ class LICENSE_PLATE_GLOBALS:
     PLOTS_DIR = path.join(OUTPUTS_DIR, 'plots')
     SAVE_HTML = True
     SAVE_PNG = True
+    PNG_WORKS = True
     USE_COMET = True  # Set to True to use Comet.ml. This adds additional logging capability and visualization tools. Note you must have a comet account and API key to use this feature
     home_dir = getenv('HOME') or getenv('USERPROFILE')
     if not home_dir:

@@ -20,7 +20,7 @@ def test_models(models, model_configs, output_dir):
     Returns:
         models: Dictionary of model names to model objects updated with test results
     """
-
+    logging.info("Testing models")
     for modelname, model_config in model_configs['model_metadata'].items():
         model = models[modelname]['model_obj']
         test_df = models[modelname]['data']['test']
