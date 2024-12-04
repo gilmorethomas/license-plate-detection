@@ -3,7 +3,7 @@ from os import path
 import string
 import easyocr
 from src.utilities import load_image, overlay_boxes, imshow, save_images, save_image
-from src.plotting import histogram
+from src.plotting import histogram, bar_plot
 import pytesseract
 import cv2
 import pandas as pd 
@@ -326,7 +326,7 @@ def create_ocr_performance_plots(df, output_dir):
     # Create a dataframe where the number of detections is counted. This is determined by the number of instances of the same image name
     detection_counts = df.groupby('imgname').size().reset_index(name='detection_count')
     # Create a histogram of the number of detections per image
-    histogram(detection_counts, x='detection_count', title='Number of OCR Detections per Image', filename='ocr_detections_per_image', output_dir=output_dir, save_png=True, save_html=True)
+    histogram(detection_counts, x='detection_count', title='Number of OCR Detections per Image', filename='ocr_detections_per_image', output_dir=output_dir, save_png=True, save_html=True, d_levels=[1])
     # Create a histogram of the top 10 most common OCR detections and least common OCR detections 
     # Get the top 10 most common detections
     top_10 = detection_counts.nlargest(10, 'detection_count')
@@ -345,78 +345,100 @@ def create_ocr_performance_plots(df, output_dir):
     histogram(df, 'levenshtein_distance', 'Levenshtein Distance Distribution', 'levenshtein_distance_distribution', output_dir, save_png=True, save_html=True, d_levels=[-1])
     # Create a histogram of the Levenshtein similarity
     histogram(df, 'levenshtein_similarity', 'Levenshtein Similarity Distribution', 'levenshtein_similarity_distribution', output_dir, save_png=True, save_html=True, d_levels=[-1])
+    # Create a bar plot of the top 5 and bottom 5 Levenshtein distances on the same plot
+    # Get the top 5 most common detections
+    top_5 = df.nlargest(5, 'levenshtein_distance')
+    bottom_5 = df.nsmallest(5, 'levenshtein_distance')
+    top_bottom_5 = pd.concat([top_5, bottom_5])
+    bar_plot(top_bottom_5, 'imgname', 'levenshtein_distance', 'Top 5 and Bottom 5 Levenshtein Distances', 'top_bottom_5_levenshtein_distance', output_dir, save_png=True, save_html=True)
+    # Create a bar plot of the top 5 and bottom 5 Levenshtein similarities on the same plot
+    top_5 = df.nlargest(5, 'levenshtein_similarity')
+    bottom_5 = df.nsmallest(5, 'levenshtein_similarity')
+    top_bottom_5 = pd.concat([top_5, bottom_5])
+    bar_plot(top_bottom_5, 'imgname', 'levenshtein_similarity', 'Top 5 and Bottom 5 Levenshtein Similarities', 'top_bottom_5_levenshtein_similarity', output_dir, save_png=True, save_html=True)
+    # Create a bar plot of the top 5 and bottom 5 ocr scores 
+    df_ocr_scores = df.dropna(subset=['ocr_score'])
+    df_ocr_scores = df_ocr_scores[df_ocr_scores['ocr_score'] != 'nan']
+    df_ocr_scores['ocr_score'] = df_ocr_scores['ocr_score'].astype(float)
+    top_5 = df_ocr_scores.nlargest(5, 'ocr_score')
+    bottom_5 = df_ocr_scores.nsmallest(5, 'ocr_score')
+    top_bottom_5 = pd.concat([top_5, bottom_5])
+    bar_plot(top_bottom_5, 'imgname', 'ocr_score', 'Top 5 and Bottom 5 OCR Scores', 'top_bottom_5_ocr_scores', output_dir, save_png=True, save_html=True)
+
+
     return df    
 
 if __name__ == "__main__":
-    # Load the image and labels
-    # Get path of this file 
+    # # Load the image and labels
+    # # Get path of this file 
     dirname = os.path.dirname(__file__)
-    img = load_image(path.join(dirname ,'../test_data/Cars6.png'))
-    labels = pd.read_csv(path.join(dirname, '../test_data/Cars6.txt'), delimiter=' ', header=None)
-    simple_detector  = YOLO(path.join(dirname, '..', 'test_data', 'simple_model.pt'))
+    # img = load_image(path.join(dirname ,'../test_data/Cars6.png'))
+    # labels = pd.read_csv(path.join(dirname, '../test_data/Cars6.txt'), delimiter=' ', header=None)
+    # simple_detector  = YOLO(path.join(dirname, '..', 'test_data', 'simple_model.pt'))
  
-    # Rename the columns
-    labels.columns = ['class_id', 'x_center', 'y_center', 'width', 'height']
-    # Get the image dimensions
-    img_height, img_width, _ = img.shape
-    labels['img_width'] = img_width
-    labels['img_height'] = img_height
-    # Calculate the bounding box coordinates in non-normalized format. This is the inverse of what is done in the YOLO format conversion
-    labels['xmin'] = (labels['x_center'] - labels['width'] / 2) * labels['img_width']
-    labels['xmax'] = (labels['x_center'] + labels['width'] / 2) * labels['img_width']
-    labels['ymin'] = (labels['y_center'] - labels['height'] / 2) * labels['img_height']
-    labels['ymax'] = (labels['y_center'] + labels['height'] / 2) * labels['img_height']
+    # # Rename the columns
+    # labels.columns = ['class_id', 'x_center', 'y_center', 'width', 'height']
+    # # Get the image dimensions
+    # img_height, img_width, _ = img.shape
+    # labels['img_width'] = img_width
+    # labels['img_height'] = img_height
+    # # Calculate the bounding box coordinates in non-normalized format. This is the inverse of what is done in the YOLO format conversion
+    # labels['xmin'] = (labels['x_center'] - labels['width'] / 2) * labels['img_width']
+    # labels['xmax'] = (labels['x_center'] + labels['width'] / 2) * labels['img_width']
+    # labels['ymin'] = (labels['y_center'] - labels['height'] / 2) * labels['img_height']
+    # labels['ymax'] = (labels['y_center'] + labels['height'] / 2) * labels['img_height']
 
 
 
-    x_center = (labels['xmin'] + labels['xmax']) / 2 / labels['img_width']
-    y_center = (labels['ymin'] + labels['ymax']) / 2 / labels['img_height']
-    width = (labels['xmax'] - labels['xmin']) / labels['img_width']
-    height = (labels['ymax'] - labels['ymin']) / labels['img_height'] 
-    box_dict = {}
-    box_dict['x1'] = labels['xmin'].iloc[0]
-    box_dict['x2'] = labels['xmax'].iloc[0]
-    box_dict['y1'] = labels['ymin'].iloc[0]
-    box_dict['y2'] = labels['ymax'].iloc[0]
-    results = perform_ocr_of_single_img(img, box_dict, path.join(dirname, '..', 'test_data'), save_name='license_plate_6')
-    # Output to CSV with pandas dataframe 
-    df = pd.DataFrame(results)
-    df.to_csv(path.join(dirname, '..', 'test_data', 'license_plate_6.csv'), index=False)
-    # Do the same as the above for license plate 210, which has reversed text 
-    # Load the image and labels
-    # Get path of this file 
-    dirname = os.path.dirname(__file__)
-    img = load_image(path.join(dirname ,'../test_data/Cars210.png'))
-    labels = pd.read_csv(path.join(dirname, '../test_data/Cars210.txt'), delimiter=' ', header=None)
-    simple_detector  = YOLO(path.join(dirname, '..', 'test_data', 'simple_model.pt'))
+    # x_center = (labels['xmin'] + labels['xmax']) / 2 / labels['img_width']
+    # y_center = (labels['ymin'] + labels['ymax']) / 2 / labels['img_height']
+    # width = (labels['xmax'] - labels['xmin']) / labels['img_width']
+    # height = (labels['ymax'] - labels['ymin']) / labels['img_height'] 
+    # box_dict = {}
+    # box_dict['x1'] = labels['xmin'].iloc[0]
+    # box_dict['x2'] = labels['xmax'].iloc[0]
+    # box_dict['y1'] = labels['ymin'].iloc[0]
+    # box_dict['y2'] = labels['ymax'].iloc[0]
+    # results = perform_ocr_of_single_img(img, box_dict, path.join(dirname, '..', 'test_data'), save_name='license_plate_6')
+    # # Output to CSV with pandas dataframe 
+    # df = pd.DataFrame(results)
+    # df.to_csv(path.join(dirname, '..', 'test_data', 'license_plate_6.csv'), index=False)
+    # # Do the same as the above for license plate 210, which has reversed text 
+    # # Load the image and labels
+    # # Get path of this file 
+    # dirname = os.path.dirname(__file__)
+    # img = load_image(path.join(dirname ,'../test_data/Cars210.png'))
+    # labels = pd.read_csv(path.join(dirname, '../test_data/Cars210.txt'), delimiter=' ', header=None)
+    # simple_detector  = YOLO(path.join(dirname, '..', 'test_data', 'simple_model.pt'))
  
-    # Rename the columns
-    labels.columns = ['class_id', 'x_center', 'y_center', 'width', 'height']
-    # Get the image dimensions
-    img_height, img_width, _ = img.shape
-    labels['img_width'] = img_width
-    labels['img_height'] = img_height
-    # Calculate the bounding box coordinates in non-normalized format. This is the inverse of what is done in the YOLO format conversion
-    labels['xmin'] = (labels['x_center'] - labels['width'] / 2) * labels['img_width']
-    labels['xmax'] = (labels['x_center'] + labels['width'] / 2) * labels['img_width']
-    labels['ymin'] = (labels['y_center'] - labels['height'] / 2) * labels['img_height']
-    labels['ymax'] = (labels['y_center'] + labels['height'] / 2) * labels['img_height']
+    # # Rename the columns
+    # labels.columns = ['class_id', 'x_center', 'y_center', 'width', 'height']
+    # # Get the image dimensions
+    # img_height, img_width, _ = img.shape
+    # labels['img_width'] = img_width
+    # labels['img_height'] = img_height
+    # # Calculate the bounding box coordinates in non-normalized format. This is the inverse of what is done in the YOLO format conversion
+    # labels['xmin'] = (labels['x_center'] - labels['width'] / 2) * labels['img_width']
+    # labels['xmax'] = (labels['x_center'] + labels['width'] / 2) * labels['img_width']
+    # labels['ymin'] = (labels['y_center'] - labels['height'] / 2) * labels['img_height']
+    # labels['ymax'] = (labels['y_center'] + labels['height'] / 2) * labels['img_height']
 
 
 
-    x_center = (labels['xmin'] + labels['xmax']) / 2 / labels['img_width']
-    y_center = (labels['ymin'] + labels['ymax']) / 2 / labels['img_height']
-    width = (labels['xmax'] - labels['xmin']) / labels['img_width']
-    height = (labels['ymax'] - labels['ymin']) / labels['img_height'] 
-    box_dict = {}
-    box_dict['x1'] = labels['xmin'].iloc[0]
-    box_dict['x2'] = labels['xmax'].iloc[0]
-    box_dict['y1'] = labels['ymin'].iloc[0]
-    box_dict['y2'] = labels['ymax'].iloc[0]
-    results = perform_ocr_of_single_img(img, box_dict, path.join(dirname, '..', 'test_data'), save_name='license_plate_210')
-    df = pd.DataFrame(results)
-    df.to_csv(path.join(dirname, '..', 'test_data', 'license_plate_210.csv'), index=False)
+    # x_center = (labels['xmin'] + labels['xmax']) / 2 / labels['img_width']
+    # y_center = (labels['ymin'] + labels['ymax']) / 2 / labels['img_height']
+    # width = (labels['xmax'] - labels['xmin']) / labels['img_width']
+    # height = (labels['ymax'] - labels['ymin']) / labels['img_height'] 
+    # box_dict = {}
+    # box_dict['x1'] = labels['xmin'].iloc[0]
+    # box_dict['x2'] = labels['xmax'].iloc[0]
+    # box_dict['y1'] = labels['ymin'].iloc[0]
+    # box_dict['y2'] = labels['ymax'].iloc[0]
+    # results = perform_ocr_of_single_img(img, box_dict, path.join(dirname, '..', 'test_data'), save_name='license_plate_210')
+    # df = pd.DataFrame(results)
+    # df.to_csv(path.join(dirname, '..', 'test_data', 'license_plate_210.csv'), index=False)
 
-    # Perform OCR on the entire dataframe
+    # # Perform OCR on the entire dataframe
     ocr_results = pd.read_csv(path.join(dirname, '..', 'test_data', 'model_a_ocr_results.csv'))
-    ocr_results = perform_ocr_on_df_images(ocr_results, path.join(dirname, '..', 'test_data', 'ocr_results'), verbose=True)
+    create_ocr_performance_plots(ocr_results, path.join(dirname, '..', 'test_data', 'ocr_results'))
+    # ocr_results = perform_ocr_on_df_images(ocr_results, path.join(dirname, '..', 'test_data', 'ocr_results'), verbose=True)

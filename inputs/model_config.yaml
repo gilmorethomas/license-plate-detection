@@ -2,7 +2,7 @@ default_configuration:
   model_type: 'yolov8m'
   seed: 42 # Seed for reproducibility
   model_directory: 'models' # Directory to save the model
-  load_saved_model: True  # Load saved models from the model directory instead of training
+  load_saved_model: False  # Load saved models from the model directory instead of training
   device: "cpu" # Device to run the model on. cpu is standard for most, mps available for Apple Silicon with Metal Performance Shaders (MPS). Select 0 or 1 for GPU 
   data_split: 
     train_split: 0.6 # Train split
@@ -13,7 +13,7 @@ default_configuration:
     batch: 64 # Batch size 
     imgsz: 320 # Image size (width and height) for training
     cache: 'ram' # Cache images for faster training. Options: 'ram' or 'disk'. 'ram' is faster but uses more memory. 'disk' is slower but uses less memory. 'ram' is not deterministic.
-    time: 2 # Max time for training, in hours
+    time: 2.5 # Max time for training, in hours
     plots: True # Plot training results
     exist_ok:           True   # If True, allows overwriting of an existing project/name directory. Useful for iterative experimentation without needing to manually clear previous outputs. Directory management is handled by the code, so keep this true
     #### The below are defaults. Just putting them for completeness and ease of access 
@@ -28,7 +28,7 @@ default_configuration:
     rect:               False   # Enables rectangular training, optimizing batch composition for minimal padding. Can improve efficiency and speed but may affect model accuracy.
     cos_lr:             False   # Utilizes a cosine learning rate scheduler, adjusting the learning rate following a cosine curve over epochs. Helps in managing learning rate for better convergence.
     close_mosaic:       10      # Disables mosaic data augmentation in the last N epochs to stabilize training before completion. Setting to 0 disables this feature.
-    resume:             True   # Resumes training from the last saved checkpoint. Automatically loads model weights, optimizer state, and epoch count, continuing training seamlessly.
+    resume:             False   # Resumes training from the last saved checkpoint. Automatically loads model weights, optimizer state, and epoch count, continuing training seamlessly.
     amp:                True    # Enables Automatic Mixed Precision (AMP) training, reducing memory usage and possibly speeding up training with minimal impact on accuracy.
     fraction:           1.0     # Specifies the fraction of the dataset to use for training. Allows for training on a subset of the full dataset, useful for experiments or when resources are limited.
     profile:            False   # Enables profiling of ONNX and TensorRT speeds during training, useful for optimizing model deployment.
@@ -62,7 +62,11 @@ default_configuration:
     exist_ok: True   # If True, allows overwriting of an existing project/name directory. Useful for iterative experimentation without needing to manually clear previous outputs. Directory management is handled by the code, so keep this true
   doc: Note that anything that is not specified in the individual model will be taken from here. Almost all parameters from here can be overridden in the individual model configuration. See https://docs.ultralytics.com/modes/train/#train-settings for more details.
 model_metadata: 
-  model_a: 
+  model_b: 
     model_type: 'yolov8m'
     training_parameters: 
-      epochs: 10
+      epochs: 20
+  model_c: 
+    model_type: 'yolo11n'
+    training_parameters: 
+      epochs: 20

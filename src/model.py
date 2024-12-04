@@ -103,7 +103,6 @@ def validate_model(model, modelname, output_dir, interface_yaml, device, seed, v
             return None, None
         validation_args.pop('bypass_validation')
     logging.info(f"Validating model {modelname}")
-    interface_yaml='/Users/thomasgilmore/Documents/20_Academic/ECE_Masters/ECE_5554_Computer_Vision/Project/license-plate-detection/src/../outputs/datasets/cars_license_plate_new/datasets.yaml'
     results = model.val(
         data=interface_yaml,
         project=f'outputs/{modelname}', # Set the output directory for the model
@@ -190,7 +189,7 @@ def train_model(model, model_config, defaults, data, verbose=True):
         model=model
     )
     # Reformat to yaml format
-    interface_yaml, new_train_df, new_val_df, new_test_df = createYamlFormattedData(train_df, val_df, test_df, model_dir, save=False)
+    interface_yaml, new_train_df, new_val_df, new_test_df = createYamlFormattedData(train_df, val_df, test_df, path.join(model_dir, 'dataset'), save=False)
     if model_config.get('load_saved_models', defaults['load_saved_model']):
         expected_dir = path.join(model_output_dir, str(latest_model_dir - 1))
         if path.exists(expected_dir) and path.exists(path.join(expected_dir, model + '.pt')) and path.exists(path.join(expected_dir, 'weights', 'best.onnx')):
@@ -227,9 +226,9 @@ def train_model(model, model_config, defaults, data, verbose=True):
         logging.warning(f"You specified to load saved model, but model {model_name} does not exist. Training new model.")
         
     # At this point, we would want to save the data 
-    interface_yaml, new_train_df, new_val_df, new_test_df = createYamlFormattedData(train_df, val_df, test_df, model_dir, save=True)
+    interface_yaml, new_train_df, new_val_df, new_test_df = createYamlFormattedData(train_df, val_df, test_df, path.join(model_dir, 'dataset'), save=True)
     plot_test_train_split(new_train_df, new_val_df, new_test_df, remaining_points, model_dir, model)
-    logging.info(f"Training model {model_name}")
+    logging.info(f"Training model {model_name} with yaml file {interface_yaml}")
     model_obj = YOLO(model_config['model_type'])
 
 

@@ -33,7 +33,7 @@ def histogram(data, x, title, filename, output_dir, save_png=True, save_html=Tru
     # If we have bins > number of unique values, we will use the number of unique values as the number of bins
     if num_bins > len(numeric_data.unique()):
         num_bins = len(numeric_data.unique())
-    bins = np.linspace(numeric_data.min(), numeric_data.max(), num_bins)
+    bins = np.linspace(numeric_data.min(), numeric_data.max() + (numeric_data.max() - numeric_data.min())/ num_bins, num_bins + 1)
     # Add in our d_level bins
     if d_levels is not None:
         # Concatenate the bins with the unique values of the d_levels
@@ -44,15 +44,24 @@ def histogram(data, x, title, filename, output_dir, save_png=True, save_html=Tru
     # Sort the bins
     bins = np.sort(bins)
 
-    # Create the histogram data
-    hist_data = pd.cut(numeric_data, bins=bins).astype(str)
+
+    # Create the histogram data. Make this left inclusive and right inclusive. Use only numeric data
+    hist_data = pd.cut(numeric_data, bins, right=False).sort_values().astype(str)
     
     # Add the 'None' bin
-    hist_data = pd.concat([hist_data, data[data[x] == 'None'][x]])
-    hist_data = pd.concat([hist_data, data[data[x] == 'nan'][x]])
+    hist_data = pd.concat([
+        pd.Series(['None'] * data[data[x] == 'None'].shape[0]), 
+        pd.Series(['nan'] * data[data[x] == 'nan'].shape[0]),
+        hist_data])
+    hist_data.name = x + '_hist'
+    # Now that we have a series, merge it with the dataframe based on the index of the sorted data
+    hist_data = pd.merge(hist_data, data, left_index=True, right_index=True)
+    # hist_data_proc = hist_data.astype(str)
+    # hist_data_proc = pd.Categorical(hist_data_proc, categories=categories, ordered=True)
+    
 
-    # Create the histogram
-    fig = px.histogram(hist_data, x=x, title=title)
+    # Create the histogram using the series
+    fig = px.histogram(hist_data, title=title, x=x + '_hist')
     finalize_plot(fig, title, filename, output_dir, save_png=save_png, save_html=save_html)
 
 
@@ -65,6 +74,9 @@ def histogram(data, x, title, filename, output_dir, save_png=True, save_html=Tru
     # fig.add_trace(pgo.Histogram(x=data[x], name='Other'))
     # finalize_plot(fig, title, filename, output_dir, save_png=save_png, save_html=save_html)
     # If there are special x callouts, use them
+def bar_plot(data, x, y, title, filename, output_dir, save_png=True, save_html=True, xaxis_title=None, yaxis_title=None):
+    fig = px.bar(data, x=x, y=y, title=title)
+    finalize_plot(fig, title, filename, output_dir, save_png=save_png, save_html=save_html, xaxis_title=xaxis_title, yaxis_title=yaxis_title, plot_type='bar')
 
 def finalize_plot(fig, title, filename, output_dir, save_png=True, save_html=True, make_title_replacements=True, plot_type=None, xaxis_title=None, yaxis_title=None):
     """Writes a plot to a png and html file
