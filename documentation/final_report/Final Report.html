@@ -23,7 +23,7 @@
     }
     .image-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
       gap: 10px;
     }
     .image-grid img {
@@ -72,7 +72,12 @@
     <!-- Approach -->
     <h3>Approach</h3>
     <p>To achieve effective license plate detection, we utilized a combination of image processing techniques and deep learning algorithms. The approach involved:</p>
-      <h4>Data Collection:</h4> 
+      <h4>Our Model Architecture:</h4> 
+	  <p>The architecture of the license plate detection system involves several key components. First, images containing vehicles with visible license plates are collected from publicly available datasets and preprocessed to enhance quality and consistency through techniques like noise reduction, color space transformation, and edge detection. The YOLOv8 model is then used for object detection, trained on the annotated dataset to detect and localize license plates. The system integrates OCR engines, EasyOCR and Tesseract, to extract license plate numbers from the detected plates, with preprocessing steps to enhance text visibility. The system's performance is evaluated through structured experiments.<p>
+      <div style="text-align: center;">
+        <img style="height: 300px;" alt="Model Architecture" src="top_level_architecture.png">
+      </div>
+	  <h4>Data Collection:</h4> 
 	  <p>This dataset contains 433 images with bounding box annotations of the car license plates within the image. Annotations are provided in the PASCAL VOC format. Sourced from <a href="https://www.kaggle.com/datasets/andrewmvd/car-plate-detection">Kaggle</a>. This data fit most of our needs by pointing out the license plate; however, it did not include the license plate information, which was manually annotated later. The figure below shows example photos from the dataset along with how the annotations correspond to each photo and the truth box placed on each photo.<p>
       <div style="text-align: center;">
         <img style="height: 300px;" alt="Sample Data" src="KaggleDataExample.jpg">
@@ -108,6 +113,7 @@
       <img src="PR_curve.png" alt="PR Curve">
       <img src="results.png" alt="Model Results">
     </div>
+	<p>After careful parameter tuning, the model was trained over 34 epochs, taking over 2 hours to complete. The training and validation metrics include various losses. Additionally, the learning rates for different parameter groups were adjusted throughout the training process to optimize performance. These results demonstrate the model's progressive learning and refinement, achieving higher accuracy and better generalization.<p>
     <p>The model demonstrates robust performance across multiple evaluation metrics, indicating its reliability in detecting and classifying license plates. The normalized confusion matrix reveals that the model achieves a high accuracy rate of 95% for identifying license plates while maintaining a low false positive rate of 5% for the background class. The F1 confidence curve shows an F1 score of 0.91 for all classes at a confidence threshold of 0.405, suggesting a strong balance between precision and recall at this level. Additionally, the precision-confidence curve indicates perfect precision (1.0) at a confidence threshold of 0.807, meaning that all predictions above this threshold are accurate, albeit at the potential expense of reduced recall. The precision-recall curve further supports the model's effectiveness, with a mean Average Precision (mAP) of 0.956 at an Intersection over Union (IoU) threshold of 0.5, reflecting its ability to accurately detect and retrieve most relevant instances. These results highlight the model’s capability to deliver high precision and recall, making it well-suited for applications requiring reliable license plate detection with minimal misclassification.<p>
     <p>In addition to detecting and localizing license plates using the YOLOv8 model, our system incorporates Optical Character Recognition (OCR) to extract the license plate numbers from the detected plates. We utilized two OCR engines: EasyOCR and Tesseract. EasyOCR is known for its ease of use and support for multiple languages, while Tesseract is a widely-used open-source OCR engine with robust text recognition capabilities.<p>
     <p>The OCR process begins by cropping the detected license plate regions from the images. These cropped regions are then preprocessed to enhance text visibility, including converting the images to grayscale and applying thresholding techniques. The preprocessed images are fed into the OCR engine, which extracts the text from the license plates. The extracted text is then validated and formatted to ensure it complies with standard license plate formats.<p>
