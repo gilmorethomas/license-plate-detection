@@ -3,7 +3,7 @@
 <head>  
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta charset="utf-8">
-  <title>License Plate Detection | ECE, Virginia Tech | Fall 2024: ECE 4554/5554</title>
+  <title>License Plate Detection and Optical Character Recognition | ECE, Virginia Tech | Fall 2024: ECE 4554/5554</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="">
   <meta name="author" content="">
@@ -22,11 +22,25 @@
     .data {
       color: #FF9900;
     }
+    .content-wrapper {
+            display: flex;
+            gap: 20px;
+        }
     .image-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
       gap: 10px;
     }
+    .image-grid-item {
+            text-align: center;
+        }
+    .image-grid-item figcaption {
+        margin-top: 10px;
+        font-style: italic;
+    }
+    .text-content {
+            flex: 1;
+        }
     .image-grid img {
       width: 100%;
       height: auto;
@@ -50,7 +64,8 @@
     <span style="font-size: 18px; line-height: 1.5em;">Fall 2024 ECE 4554/5554 Computer Vision: Course Project</span><br>
     <span style="font-size: 18px; line-height: 1.5em;">Virginia Tech</span>
 	<p> </p>
-	<a href="https://github.com/gilmorethomas/license-plate-detection" target="_blank">Project is on GitHub (Click Here)</a>
+  <h2>Code</h2>
+	<a href="https://github.com/gilmorethomas/license-plate-detection" target="_blank" style="font-size: 1.5em;">Project is on GitHub (Click Here)</a>
     <hr>
 
     <!-- Abstract -->
@@ -63,6 +78,7 @@
     <p>A sample detection result from the developed system: The system processes a given photo, detects the license plate, and accurately reports the license plate number.</p>
     <div style="text-align: center;">
       <img style="height: 300px;" alt="Sample Detection" src="mainfig2.jpg">
+      <figcaption> Sample Model Detection</figcaption>
     </div>
 
     <br><br>
@@ -78,66 +94,128 @@
     <h3>Approach</h3>
     <p>To achieve effective license plate detection, we utilized a combination of image processing techniques and deep learning algorithms. The approach involved:</p>
       <h4>Architecture:</h4> 
-	  <p>The architecture of the license plate detection system involves several key components. First, images containing vehicles with visible license plates are collected from publicly available datasets and preprocessed to enhance quality and consistency through techniques like noise reduction, color space transformation, and edge detection. The YOLOv8 model is then used for object detection, trained on the annotated dataset to detect and localize license plates. The system integrates OCR engines, EasyOCR and Tesseract, to extract license plate numbers from the detected plates, with preprocessing steps to enhance text visibility. The system's performance is evaluated through structured experiments.<p>
+	  <p>The architecture of the license plate detection system involves several key components. First, images containing vehicles with visible license plates are collected from publicly available datasets and preprocessed to enhance quality and consistency through techniques like noise reduction, color space transformation, and edge detection. The YOLOv8 model is then used for object detection, trained on the annotated dataset to detect and localize license plates. The system integrates OCR engines, EasyOCR and Tesseract, to extract license plate numbers from the detected plates, with preprocessing steps to enhance text visibility. The system's performance is evaluated through structured experiments. On the backend, various open source packages are leveraged, including NumPy, PyTorch, Pandas, Comet ML, and more. For a detailed list of packges, see our Github<p>
       <div style="text-align: center;">
         <img style="height: 300px;" alt="Model Architecture" src="top_level_architecture.png">
+        <figcaption> Top Level Architecture</figcaption>
       </div>
-    <h4>YOLO Overview:</h4> 
-      <p>YOLO is a relatively recent breakthrough and approach to object detection. The paradigm behind YOLO is reframing object detection as a single regression problem (thus you only look once) at an ima YOLO is capable of detection images in real-time at a high frame rate, making it capable for things like object identification in videos.</p>
+    <h4>Detection Model Overview: You Only Look Once (YOLOv8)</h4> 
+      <p>YOLO is a relatively recent breakthrough and approach to object detection. It operates by dividing the input image into a grid and predicting bounding boxes and class probabilities for each grid cell. This allows the model to detect multiple objects within an image in a single forward pass, making it highly suitable for real-time applications. The paradigm behind YOLO is reframing object detection as a single regression problem (thus you only look once) at an ima YOLO is capable of detection images in real-time at a high frame rate, making it capable for things like object identification in videos. YOLOv8 improves upon its predecessors with enhanced architecture, better feature extraction, and more accurate bounding box predictions.</p>
       <p>At a high level, the way to think about YOLO is by its three building blocks: Backbone, Neck, and Head. The backbone serves as a feature extractor, capturing simple patterns like edges and textures. It aims to provide a rich representation of the input. The neck performs feature fusion and integrates contextual information through feature pyramid aggregation from various stages of the backbone. The head is the last part of the network and generates bounding boxes and confidence scores for each image. <a href="https://medium.com/@juanpedro.bc22/detailed-explanation-of-yolov8-architecture-part-1-6da9296b954e">[YOLOv8 Architecture]</a></p>
       <p>YOLO's architecture is derived from the GoogLeNet model for image classification. It has 24 convolutional layers followed by 2 fully-connected layers. The more recent YOLOv8 is a PyTorch-based implementation that employs lighter and more optimized backbones. YOLO has limitations in its spatial constraints, allowing only a single bounding box per grid cell, which can be limiting for objects that are large or have multiple parts. This leads to difficulty in generalization in new or unusual aspect ratios. 
         
         <a href="https://arxiv.org/pdf/1506.02640">[You Only Look Once: Unified, Real-Time Object Detection]</a></p></p>
         
-        
      <div style="text-align: center;">
         <img style="height: 300px;" alt="YOLO Architecture" src="yolo_model_architecture.png">
+        <figcaption> YOLO Model Architecture</figcaption>
       </div>
-    <h4>Tesseract Overview:</h4> 
+    <h4>Optical Character Recognition (OCR) Overview: Tesseract</h4> 
         <p>The Tesseract OCR Engine is an open source OCR engine developed in the 1980s to 1990s and is now maintained by Google. The project found its motivation in commercial OCR engines being in their infancy in the dday and being unable to reliably and adequately perform well on anything other than high-quality prints. Tesseract assumes its input is a bianry image with optional polygonal defined text regions. The engine has a few main steps: preprocessing, text detection, character recognition, and post-processing. At a high level, the engine preprocesses the image through binarization (making black and white), removing noise, desckewing, and rescaling. Text detection is performed by image segmentation, dividing the image into distinct areas to identify text blocks and further separating these blocks into lines, words, and characters. For character recognition, Tesseract primarily compares segmented characters against pre-trained models, employing long short-term memory (LSTM) networks to recognize sequences of characters. This allows for improved accuracy for cursive and connected text. Post-processing is typically done using dictionary lookup and contextual analysis.  At output, Tesseract can produce plaintext or can output in structured format like PDF or TSV. <br><br>The sort of post-processing metrix employed by Tesseract are typically ill-suited for things like license plate recognition, as there is no language-dictionary. If one knows a priori what the format of their license plate — for instance if it is all numeric — then results can likely be improved. For instance a model may have trouble distinguishing between the letter <i><b>S</b></i> and the number <i><b>5</b></i>, but if a user knows that the plate is all numeric, they can map those in post as well.
           <a href="https://static.googleusercontent.com/media/research.google.com/en//pubs/archive/33418.pdf">An Overview of the Tesseract OCR Engine</a><p>
 	  <h4>Data Collection:</h4> 
 	  <p>This dataset contains 433 images with bounding box annotations of the car license plates within the image. Annotations are provided in the PASCAL VOC format. Sourced from <a href="https://www.kaggle.com/datasets/andrewmvd/car-plate-detection">Kaggle</a>. This data fit most of our needs by pointing out the license plate; however, it did not include the license plate information, which was manually annotated later. By implementing this step it allowed for the license plates characters to be compared agaisnt truth. The figure below shows example photos from the dataset along with how the annotations correspond to each photo and the truth box placed on each photo.<p>
       <div style="text-align: center;">
         <img style="height: 300px;" alt="Sample Data" src="KaggleDataExample.jpg">
-        <figcaption> Hey there</figcaption>
+        <figcaption> Kaggle Data Example</figcaption>
       </div>
       <h4>Preprocessing:</h4>
 	  <p>Images underwent several preprocessing steps to prepare them for the YOLO model. This included normalizing the values for the bounding boxes around each license plate. This required finding the original photo size and normalizing the bounding box coordinates to that size to ensure proper scaling. Additionally, the ground truth data for the license plates was manually added, and the data was formatted into a YAML file to be fed into the YOLO model.<p>
       <div style="text-align: center;">
         <img style="height: 250px;" alt="Sample Input" src="NormalizeExample.jpg">
+        <figcaption> Preprocessed Image</figcaption>
       </div>
-      <h4>Detection Model:</h4> 
-	  <p>We implemented a deep learning-based object detection architecture, specifically selecting YOLOv8 due to its balance between speed and accuracy for real-time applications. YOLOv8 (You Only Look Once version 8) is a state-of-the-art object detection model known for its efficiency and high performance. It operates by dividing the input image into a grid and predicting bounding boxes and class probabilities for each grid cell. This allows the model to detect multiple objects within an image in a single forward pass, making it highly suitable for real-time applications. YOLOv8 improves upon its predecessors with enhanced architecture, better feature extraction, and more accurate bounding box predictions. The model was trained using the annotated dataset, and various hyperparameters were tuned to optimize its performance for license plate detection.</p>
       <h4>Model Evaluation:</h4> 
 	  <p>The model's performance was evaluated primarily on its precision in detecting the actual license number plate. The evaluation metrics included mean Average Precision (mAP) at different IoU thresholds (0.5 to 0.95), precision, recall, and F1-score. The results demonstrated significant potential for real-time object detection in challenging environments.<p>
     <br><br>
     
     <!-- Experiments and Results -->
     <h3>Results</h3>
+    <h4>Train, Validation, Evaluation Split</h4> 
     <p>To prepare the data for training, we first split the dataset into training, validation, and test sets. This ensures that the model is trained on one subset of the data, validated on another, and tested on a completely separate subset to evaluate its performance. The split ratios for training, validation, and test sets were defined in the model configuration, with typical values being 60% for training, 20% for validation, and 20% for testing. The data was then saved into the model directory for easy access during training. The training process involved loading the default training parameters from the model configuration and overriding them with any specific parameters provided in the model's configuration. The model was trained using the YOLOv8 architecture, with the training results saved and the model exported in ONNX format for further use. This structured approach ensures that the model is robust and its performance can be reliably evaluated on unseen data.</p>
     <!-- Main Results Figure --> 
     <div style="text-align: center;">
       <img style="height: 350px;" alt="Results" src="DataSplit.png">
+      <figcaption> Test, Validation, Training Split</figcaption>
     </div>
+    <h4>Model Training</h4> 
     <p>The training process involved loading the default training parameters from the model configuration and overriding them with any specific parameters provided in the model's configuration. The YOLOv8 model was trained using the prepared dataset, with the training data used to update the model's weights and the validation data used to monitor the model's performance and prevent overfitting. During training, various hyperparameters such as learning rate, batch size, and number of epochs were tuned to optimize the model's performance. The training results were saved, and the model was exported in ONNX format for further use. This structured approach ensures that the model is robust and its performance can be reliably evaluated on unseen data. The training parameters were kept largely the same as the default settings in the Ultralytics model settings, but can easily be tuned through our YAML interface. The parameters that can be tuned are quite extensive, but include things such as the number of epochs, max training time, batch size, optimizer, learning rate scheduler, data augmentation, automatic mixed precision, momentum, and warm-up parameters. An exhaustive list is available here: <a href="https://docs.ultralytics.com/modes/train/#train-settings">Ultralytics Training Settings</a></p>
     <div style="text-align: center;">
       <img style="height: 350px;" alt="Results2" src="Training_Validation.jpg">
+      <figcaption> Sample of Training and Validation Images</figcaption>
     </div>
-    <p>To thoroughly evaluate the performance of the YOLOv8 model, several metrics and visualizations were used. The confusion matrix provides a detailed breakdown of the model's predictions, showing the true positives, false positives, true negatives, and false negatives, which helps in understanding the model's accuracy and error distribution. The F1 curve illustrates the balance between precision and recall across different thresholds, highlighting the model's effectiveness in handling imbalanced data. The labels correlogram visualizes the correlation between different classes, offering insights into potential misclassifications. The precision (P) curve shows the precision of the model at various confidence thresholds, while the precision-recall (PR) curve plots precision against recall, providing a comprehensive view of the model's performance across different recall levels. These metrics and visualizations collectively ensure a robust evaluation of the model's detection capabilities.</p>
-    <div class="image-grid">
-      <img src="confusion_matrix_normalized.png" alt="Confusion Matrix">
-      <img src="F1_curve.png" alt="F1 Curve">
-      <img src="labels_correlogram.jpg" alt="Labels Correlogram">
-      <img src="P_curve.png" alt="Precision Curve">
-      <img src="PR_curve.png" alt="PR Curve">
-      <img src="results.png" alt="Model Results">
-    </div>
-	<p>Initially, the model was tested without parameter tuning to ensure the code was functioning correctly. After confirming the initial setup, careful parameter tuning was performed to enhance the model's performance. The model was then trained over 40 epochs, taking over 2 hours to complete. The training and validation metrics include various losses. Additionally, the learning rates for different parameter groups were adjusted throughout the training process to optimize performance. These results demonstrate the model's progressive learning and refinement, achieving higher accuracy and better generalization.<p>
-    <p>The model demonstrates robust performance across multiple evaluation metrics, indicating its reliability in detecting and classifying license plates. The normalized confusion matrix reveals that the model achieves a high accuracy rate of 95% for identifying license plates while maintaining a low false positive rate of 5% for the background class. The F1 confidence curve shows an F1 score of 0.91 for all classes at a confidence threshold of 0.405, suggesting a strong balance between precision and recall at this level. Additionally, the precision-confidence curve indicates perfect precision (1.0) at a confidence threshold of 0.807, meaning that all predictions above this threshold are accurate, albeit at the potential expense of reduced recall. The precision-recall curve further supports the model's effectiveness, with a mean Average Precision (mAP) of 0.956 at an Intersection over Union (IoU) threshold of 0.5, reflecting its ability to accurately detect and retrieve most relevant instances. These results highlight the model’s capability to deliver high precision and recall, making it well-suited for applications requiring reliable license plate detection with minimal misclassification.<p>
+    <head>
+      <meta charset="UTF-8">
+      <title>Final Report</title>
+      <style>
+          .content-wrapper {
+              display: flex;
+              gap: 20px;
+          }
+          .text-content {
+              flex: 1;
+          }
+          .image-grid {
+              display: grid;
+              grid-template-columns: 1fr;
+              gap: 20px;
+              flex: 1;
+          }
+          .image-grid-item {
+              text-align: center;
+          }
+          .image-grid-item img {
+              max-width: 100%;
+              height: auto;
+          }
+          .image-grid-item figcaption {
+              margin-top: 10px;
+              font-style: italic;
+          }
+      </style>
+  </head>
+  <body>
+    <h4>Model Performance</h4> 
+      <div class="content-wrapper">
+          <div class="text-content">
+              <p>Several metrics are employed for model performance evaluation, though these are not exhaustive. The confusion matrix provides a detailed breakdown of the model's predictions, showing the true positives, false positives, true negatives, and false negatives, which helps in understanding the model's accuracy and error distribution. The F1 curve illustrates the balance between precision and recall across different thresholds, highlighting the model's effectiveness in handling imbalanced data. The labels correlogram visualizes the correlation between different classes, offering insights into potential misclassifications. The precision (P) curve shows the precision of the model at various confidence thresholds, while the precision-recall (PR) curve plots precision against recall, providing a comprehensive view of the model's performance across different recall levels. These metrics and visualizations collectively ensure a robust evaluation of the model's detection capabilities.</p>
+              <p>After careful parameter tuning, the model was trained over 40 epochs, taking over 2 hours to complete. The training and validation metrics include various losses. Additionally, the learning rates for different parameter groups were adjusted throughout the training process to optimize performance. These results demonstrate the model's progressive learning and refinement, achieving higher accuracy and better generalization.<p>
+                Initially, the model was tested without parameter tuning to ensure the code was functioning correctly. After confirming the initial setup, careful parameter tuning was performed to enhance the model's performance. The model was then trained over 40 epochs, taking over 2 hours to complete. The training and validation metrics include various losses. Additionally, the learning rates for different parameter groups were adjusted throughout the training process to optimize performance. These results demonstrate the model's progressive learning and refinement, achieving higher accuracy and better generalization.<p>
+                  <p>The model demonstrates robust performance across multiple evaluation metrics, indicating its reliability in detecting and classifying license plates. The normalized confusion matrix reveals that the model achieves a high accuracy rate of 95% for identifying license plates while maintaining a low false positive rate of 5% for the background class. The F1 confidence curve shows an F1 score of 0.91 for all classes at a confidence threshold of 0.405, suggesting a strong balance between precision and recall at this level. Additionally, the precision-confidence curve indicates perfect precision (1.0) at a confidence threshold of 0.807, meaning that all predictions above this threshold are accurate, albeit at the potential expense of reduced recall. The precision-recall curve further supports the model's effectiveness, with a mean Average Precision (mAP) of 0.956 at an Intersection over Union (IoU) threshold of 0.5, reflecting its ability to accurately detect and retrieve most relevant instances. These results highlight the model's capability to deliver high precision and recall, making it well-suited for applications requiring reliable license plate detection with minimal misclassification.<p>
+          </div>
+          <div class="image-grid">
+              <div class="image-grid-item">
+                  <img src="confusion_matrix_normalized.png" alt="Confusion Matrix" style="width: 80%;">
+                  <figcaption>Normalized Confusion Matrix. This shows that there are few missed license plate detections, but there are a decent number of background images that are incorrectly detected</figcaption>
+              </div>
+              <div class="image-grid-item">
+                  <img src="F1_curve.png" alt="F1 Curve" style="width: 60%;">
+                  <figcaption>F1 Curve</figcaption>
+              </div>
+              <div class="image-grid-item">
+                  <img src="labels_correlogram.jpg" alt="Labels Correlogram" style="width: 70%;">
+                  <figcaption>Labels Correlogram</figcaption>
+              </div>
+              <div class="image-grid-item">
+                  <img src="P_curve.png" alt="Precision Curve" style="width: 50%;">
+                  <figcaption>Precision Curve</figcaption>
+              </div>
+              <div class="image-grid-item">
+                  <img src="PR_curve.png" alt="PR Curve" style="width: 75%;">
+                  <figcaption>PR Curve</figcaption>
+              </div>
+              <div class="image-grid-item">
+                  <img src="results.png" alt="Model Results" style="width: 65%;">
+                  <figcaption>Model Results</figcaption>
+              </div>
+          </div>
+      </div>
+  </body>
+  </html>
+
     <p>In addition to detecting and localizing license plates using the YOLOv8 model, our system incorporates Optical Character Recognition (OCR) to extract the license plate numbers from the detected plates. We utilized two OCR engines: EasyOCR and Tesseract. EasyOCR is known for its ease of use and support for multiple languages, while Tesseract is a widely-used open-source OCR engine with robust text recognition capabilities.<p>
     <p>The OCR process begins by cropping the detected license plate regions from the images. These cropped regions are then preprocessed to enhance text visibility, including converting the images to grayscale and applying thresholding techniques. The preprocessed images are fed into the OCR engine, which extracts the text from the license plates. The extracted text is then validated and formatted to ensure it complies with standard license plate formats.<p>
-    <p>The imagines below show how the OCR model can pick up all of the text on the license plate, however, the main object would remain just getting the license plate number while excluding all of the state names and other numbers that can be displayed. The other imagine shows how to zoom more on the license plate to get better preformance.<p>
+    <p>The images below show how the OCR model can pick up all of the text on the license plate, however, the main object would remain just getting the license plate number while excluding all of the state names and other numbers that can be displayed. The other imagine shows how to zoom more on the license plate to get better preformance.<p>
 	<div class="image-grid">
       <img src="ocr_example.png" alt="OCR Example">
       <img src="OCR_Process.png" alt="OCR Process">
