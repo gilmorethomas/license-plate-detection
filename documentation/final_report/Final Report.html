@@ -133,7 +133,7 @@
       <img src="PR_curve.png" alt="PR Curve">
       <img src="results.png" alt="Model Results">
     </div>
-	<p>After careful parameter tuning, the model was trained over 40 epochs, taking over 2 hours to complete. The training and validation metrics include various losses. Additionally, the learning rates for different parameter groups were adjusted throughout the training process to optimize performance. These results demonstrate the model's progressive learning and refinement, achieving higher accuracy and better generalization.<p>
+	<p>Initially, the model was tested without parameter tuning to ensure the code was functioning correctly. After confirming the initial setup, careful parameter tuning was performed to enhance the model's performance. The model was then trained over 40 epochs, taking over 2 hours to complete. The training and validation metrics include various losses. Additionally, the learning rates for different parameter groups were adjusted throughout the training process to optimize performance. These results demonstrate the model's progressive learning and refinement, achieving higher accuracy and better generalization.<p>
     <p>The model demonstrates robust performance across multiple evaluation metrics, indicating its reliability in detecting and classifying license plates. The normalized confusion matrix reveals that the model achieves a high accuracy rate of 95% for identifying license plates while maintaining a low false positive rate of 5% for the background class. The F1 confidence curve shows an F1 score of 0.91 for all classes at a confidence threshold of 0.405, suggesting a strong balance between precision and recall at this level. Additionally, the precision-confidence curve indicates perfect precision (1.0) at a confidence threshold of 0.807, meaning that all predictions above this threshold are accurate, albeit at the potential expense of reduced recall. The precision-recall curve further supports the model's effectiveness, with a mean Average Precision (mAP) of 0.956 at an Intersection over Union (IoU) threshold of 0.5, reflecting its ability to accurately detect and retrieve most relevant instances. These results highlight the model’s capability to deliver high precision and recall, making it well-suited for applications requiring reliable license plate detection with minimal misclassification.<p>
     <p>In addition to detecting and localizing license plates using the YOLOv8 model, our system incorporates Optical Character Recognition (OCR) to extract the license plate numbers from the detected plates. We utilized two OCR engines: EasyOCR and Tesseract. EasyOCR is known for its ease of use and support for multiple languages, while Tesseract is a widely-used open-source OCR engine with robust text recognition capabilities.<p>
     <p>The OCR process begins by cropping the detected license plate regions from the images. These cropped regions are then preprocessed to enhance text visibility, including converting the images to grayscale and applying thresholding techniques. The preprocessed images are fed into the OCR engine, which extracts the text from the license plates. The extracted text is then validated and formatted to ensure it complies with standard license plate formats.<p>
@@ -180,7 +180,7 @@
 
 	<!-- Challenges in Diverse Plate Designs -->
 	<h4>Challenges in Diverse Plate Designs</h4>
-	<p>The model shows variability in detecting plates with unique designs or occlusions:</p>
+	<p>Typically, if the license plate was straight on, it was easy to read. However, with diverse plates or challenging angles and distances in the image, the OCR struggled. Some plates were unreadable, resulting in N/A being placed in those images as it was impossible to decipher the text. The box above the license plate displays the OCR's predicted text.</p>
 	<ul>
 	  <li><strong>Specialized Plates:</strong> Plates with unique fonts or additional artwork (e.g., state emblems) sometimes caused confusion in OCR processing.</li>
 	  <li><strong>Partially Obscured Plates:</strong> Detection accuracy decreased when plates were partially blocked by objects like dirt, bumper stickers, or tow bars.</li>
@@ -211,9 +211,6 @@
       <li><a href="https://datasetninja.com/car-license-plate" target="_blank">Car License Plate Dataset</a></li>
       <li><a href="https://www.kaggle.com/datasets/tolgadincer/us-license-plates" target="_blank">U.S. License Plates</a></li>
       <li><a href="https://yolov8.com/" target="_blank">YOLOv8</a></li>
-      <li><a href="https://www.geeksforgeeks.org/detect-and-recognize-car-license-plate-from-a-video-in-real-time/" target="_blank">Picture 1</a></li>
-      <li><a href="https://signsandtagsonline.com/products/custom-louisiana-state-our-invironment-our-future-personalized-license-plate" target="_blank">Picture 2a</a></li>
-      <li><a href="https://www.newsweek.com/24-vehicles-look-forward-2024-1853505" target="_blank">Picture 2b</a></li>
       <li><a href="https://ieeexplore.ieee.org/document/6909475" target="_blank">Rich Feature Hierarchies for Accurate Object Detection and Semantic Segmentation</a></li>
       <li><a href="https://medium.com/@juanpedro.bc22/detailed-explanation-of-yolov8-architecture-part-1-6da9296b954e" target="_blank">YOLOv8 Architecture</a></li> 
       <li><a href="https://arxiv.org/pdf/1506.02640" target="_blank">You Only Look Once: Unified, Real-Time Object Detection</a></li> 
