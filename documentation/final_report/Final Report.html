@@ -70,7 +70,7 @@
 
     <!-- Abstract -->
     <h3>Abstract</h3>
-    <p>The increasing need for automated vehicle identification systems has driven the development of efficient license plate detection. This project aims to develop a system using a deep learning model, specifically YOLOv8, to detect and localize license plates in various environmental conditions. The approach involves compiling a diverse dataset, preprocessing images to enhance quality, and implementing a You Only Look Once (YOLO)v8-based detection model. Additionally, an Optical Character Recognition (OCR) system is used to extract the license plate number from the detected plates. The main result demonstrates significant potential for object detection and accurate license plate recognition in challenging environments.</p>
+    <p>Automated vehicle identification is increasingly vital for applications such as traffic management and law enforcement. This project presents a deep learning-based system for detecting and recognizing license plates in diverse environmental conditions. Utilizing YOLOv8 for object detection and integrating Optical Character Recognition (OCR) engines like EasyOCR and Tesseract, the system identifies and extracts license plate numbers from images. Comprehensive preprocessing enhances image quality, and the model is evaluated through metrics like mean Average Precision (mAP), demonstrating high accuracy even in challenging scenarios. Results for OCR like Levenshtein distance are employed to judge how well OCR is being performed. The results highlight the potential for real-time, robust license plate recognition in varied environments.</p>
     <br><br>
 	
     <!-- Teaser figure -->
@@ -185,57 +185,83 @@
           </div>
           <div class="image-grid">
               <div class="image-grid-item">
-                  <img src="confusion_matrix_normalized.png" alt="Confusion Matrix" style="width: 80%;">
+                  <!-- <img src="confusion_matrix_normalized.png" alt="Confusion Matrix" style="width: 80%;"> -->
+                  <img src="confusion_matrix_normalized.png" alt="Confusion Matrix">
                   <figcaption>Normalized Confusion Matrix. This shows that there are few missed license plate detections, but there are a decent number of background images that are incorrectly detected</figcaption>
               </div>
               <div class="image-grid-item">
-                  <img src="F1_curve.png" alt="F1 Curve" style="width: 60%;">
+                  <img src="F1_curve.png" alt="F1 Curve">
+                  <!-- <img src="F1_curve.png" alt="F1 Curve" style="width: 60%;"> -->
                   <figcaption>F1 Curve</figcaption>
               </div>
               <div class="image-grid-item">
-                  <img src="labels_correlogram.jpg" alt="Labels Correlogram" style="width: 70%;">
+                  <!-- <img src="labels_correlogram.jpg" alt="Labels Correlogram" style="width: 70%;"> -->
+                  <img src="labels_correlogram.jpg" alt="Labels Correlogram" stype="width: 90%"">
                   <figcaption>Labels Correlogram</figcaption>
               </div>
               <div class="image-grid-item">
-                  <img src="P_curve.png" alt="Precision Curve" style="width: 50%;">
+                  <img src="P_curve.png" alt="Precision Curve" style="height: 70%;">
+                  <!-- <img src="P_curve.png" alt="Precision Curve"> -->
                   <figcaption>Precision Curve</figcaption>
               </div>
               <div class="image-grid-item">
-                  <img src="PR_curve.png" alt="PR Curve" style="width: 75%;">
+                  <img src="PR_curve.png" alt="PR Curve">
+                  <!-- <img src="PR_curve.png" alt="PR Curve" style="width: 75%;"> -->
                   <figcaption>PR Curve</figcaption>
               </div>
               <div class="image-grid-item">
-                  <img src="results.png" alt="Model Results" style="width: 65%;">
+                  <img src="results.png" alt="Model Results" style="height: 80%">
+                  <!-- <img src="results.png" alt="Model Results" style="width: 65%;"> -->
                   <figcaption>Model Results</figcaption>
               </div>
           </div>
       </div>
   </body>
+  <body>
+    <h4>OCR Performance</h4> 
+      <div class="content-wrapper">
+          <div class="text-content">
+            <p>In addition to detecting and localizing license plates using the YOLOv8 model, our system incorporates Optical Character Recognition (OCR) to extract the license plate numbers from the detected plates. We utilized two OCR engines: EasyOCR and Tesseract. EasyOCR is known for its ease of use and support for multiple languages, while Tesseract is a widely-used open-source OCR engine with robust text recognition capabilities.<p>
+              <p>The OCR process begins by cropping the detected license plate regions from the images. These cropped regions are then preprocessed to enhance text visibility, including converting the images to grayscale and applying thresholding techniques. The preprocessed images are fed into the OCR engine, which extracts the text from the license plates. The extracted text is then validated and formatted to ensure it complies with standard license plate formats.<p>
+              <p>The images below show how the OCR model can pick up all of the text on the license plate, however, the main object would remain just getting the license plate number while excluding all of the state names and other numbers that can be displayed. The other image shows how to zoom more on the license plate to get better preformance.<p>
+          </div>
+          <div class="image-grid">
+            <div class="image-grid-item">
+              <img src="ocr_example.png" alt="OCR Example" style="width: 80%;">
+              <figcaption>Example of Bounding Box from YOLO model and output of OCR.</figcaption>
+            </div>
+          </div>
+      </div>
+  </body>
+  <br>
+  <div class="image-grid-item">
+    <img src="OCR_Process.png" alt="OCR Process" style="width: 80%;">
+    <figcaption>Example of OCR Output. This shows the process of cropping the image, making it grayscale, and then applying thresholding. </figcaption>
+  </div>
+  <p>By integrating OCR with our license plate detection system, we can accurately identify and read license plate numbers, making the system suitable for various applications such as automated vehicle identification, law enforcement, and parking management.<p>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Embedded HTML</title>
+    </head>
+    <body>
+      <h4>OCR Results</h4>
+      <iframe src="top_bottom_5_levenshtein_similarity.html" width="100%" height="450px"></iframe>
+    </body>
+    <p>The report that shows the top 5 and bottom 5 results based on Levenshtein similarity. Levenshtein distance is calculated as the minimum number of edits (insertions, deletions, or substitions) needed to convert the OCR output into the correct text. This could be used, for example, to compare OCR results to ground truth data, showing which results are most and least similar to the expected output.<p>
+      
+    <div class="image-grid">
+      <div class="image-grid-item">
+        <img src="Cars111.png" alt="Best of results" style="height: 350px;">
+        <figcaption> <br>Best of Results. The truth data is MH 20 EE 7598 and the detected was MH20EE7598. This can be attributed to Tesseract's troubles with detecting spaces</figcaption>
+      </div>
+      <div class="image-grid-item">
+        <img src="Cars105.png" alt="Worst of Results" style="height: 90;">
+        <figcaption> Worst of Results. This scores poorly due to a crowded scene. Potential refinement of text recognition to isolate words vs blocks may make this better. The detected data for this is extremely far from the truth data</figcaption>
+      </div>
+    </div>
   </html>
 
-    <p>In addition to detecting and localizing license plates using the YOLOv8 model, our system incorporates Optical Character Recognition (OCR) to extract the license plate numbers from the detected plates. We utilized two OCR engines: EasyOCR and Tesseract. EasyOCR is known for its ease of use and support for multiple languages, while Tesseract is a widely-used open-source OCR engine with robust text recognition capabilities.<p>
-    <p>The OCR process begins by cropping the detected license plate regions from the images. These cropped regions are then preprocessed to enhance text visibility, including converting the images to grayscale and applying thresholding techniques. The preprocessed images are fed into the OCR engine, which extracts the text from the license plates. The extracted text is then validated and formatted to ensure it complies with standard license plate formats.<p>
-    <p>The images below show how the OCR model can pick up all of the text on the license plate, however, the main object would remain just getting the license plate number while excluding all of the state names and other numbers that can be displayed. The other imagine shows how to zoom more on the license plate to get better preformance.<p>
-	<div class="image-grid">
-      <img src="ocr_example.png" alt="OCR Example">
-      <img src="OCR_Process.png" alt="OCR Process">
-    </div>
-    <p>By integrating OCR with our license plate detection system, we can accurately identify and read license plate numbers, making the system suitable for various applications such as automated vehicle identification, law enforcement, and parking management.<p>
-	<head>
-		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<title>Embedded HTML</title>
-	</head>
-	<body>
-		<h4>OCR Results</h4>
-		<iframe src="top_bottom_5_levenshtein_similarity.html" width="100%" height="450px"></iframe>
-	</body>
-	<p>The report that shows the top 5 and bottom 5 results based on Levenshtein similarity. This could be used, for example, to compare OCR results to ground truth data, showing which results are most and least similar to the expected output.<p>
-	<div class="image-grid">
-      <img src="Cars111.png" alt="Best of results">
-      <img src="Cars105.png" alt="Worst of Results">
-    </div>
-	
     <br><br>
     
     <!-- Qualitative Results -->
@@ -249,10 +275,41 @@
 	  <li><strong>Single Vehicle Detection:</strong> The model accurately identifies the license plate on a single vehicle in a controlled environment. These scenarios yielded excellent results and were relatively straightforward for the model to handle.</li>
 	  <li><strong>Crowded Scenes:</strong> The system effectively detects multiple license plates in busy traffic or parking lots, demonstrating its capability to handle complex scenarios. In the example shown, the system accurately identifies license plates on three vehicles, each captured from different angles and amidst the presence of people, highlighting its robustness and versatility.</li>
 	</ul>
-	<div class="image-grid">
-      <img src="GoodDetection_2.png" alt="Good Detection 1">
-      <img src="GoodDetection.png" alt="Good Detection 2">
+</head>
+<head>
+  <meta charset="UTF-8">
+  <title>Final Report</title>
+  <style>
+      .image-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 20px;
+          margin: 20px 0;
+      }
+      .image-grid-item {
+          text-align: center;
+      }
+      .image-grid-item img {
+          max-width: 100%;
+          height: auto;
+      }
+      .image-grid-item figcaption {
+          margin-top: 10px;
+          font-style: italic;
+      }
+  </style>
+<body>
+    <div class="image-grid">
+        <div class="image-grid-item">
+            <img src="GoodDetection.png" alt="Good Detection 1" style="width: 80%;">
+        </div>
+        <div class="image-grid-item">
+            <img src="GoodDetection_2.png" alt="Good Detection 2" style="width: 80%;">
+        </div>
     </div>
+</body>
+</html>
+
 
 	<!-- Performance Under Varied Lighting -->
 	<h4>Performance Under Difficult Situations</h4>
@@ -264,11 +321,16 @@
 	<li><strong>Objects Similar to plates:</strong>Situations where objects resembled license plates but were not, posing challenges for accurate detection.</li>
 	</ul>
 	<div class="image-grid">
-      <img src="BadDetection.png" alt="Bad Detection 1">
-      <img src="BadDetection2.png" alt="Bad Detection 2">
-	  <img src="BadDetection3.png" alt="Bad Detection 3">
-    </div>
-
+      <div class="image-grid-item">
+        <img src="BadDetection.png" alt="Bad Detection 1">
+      </div>
+      <div class="image-grid-item">
+        <img src="BadDetection2.png" alt="Bad Detection 2"style="height: 85%; width: 85%">
+      </div>
+      <div class="image-grid-item">
+        <img src="BadDetection3.png" alt="Bad Detection 3" style="height: 85%; width: 85%">
+      </div>
+  </div>
 
 	<!-- Challenges in Diverse Plate Designs -->
 	<h4>Challenges in Diverse Plate Designs</h4>
@@ -278,9 +340,13 @@
 	  <li><strong>Partially Obscured Plates:</strong> Detection accuracy decreased when plates were partially blocked by objects like dirt, bumper stickers, or tow bars.</li>
 	</ul>
 	<div class="image-grid">
+    <div class="image-grid-item">
       <img alt="Good OCR Detection" src="OCR_GoodResults.png">
+    </div>
+    <div class="image-grid-item">
       <img alt="Bad OCR Detection" src="OCR_BadResults.png">
     </div>
+  </div>
 
     <br><br>
 
