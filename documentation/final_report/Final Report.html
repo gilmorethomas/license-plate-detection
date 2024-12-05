@@ -8,6 +8,7 @@
   <meta name="description" content="">
   <meta name="author" content="">
 
+
   <!-- Bootstrap styles -->  
   <link href="css/bootstrap.css" rel="stylesheet">
   <style>
@@ -42,18 +43,21 @@
 <body>
 <div class="container">
   <div class="page-header">
-
+    
     <!-- Title and Name --> 
     <h1>License Plate Detection</h1> 
     <span style="font-size: 20px; line-height: 1.5em;"><strong>Thomas Gilmore, Joseph Wysocki</strong></span><br>
     <span style="font-size: 18px; line-height: 1.5em;">Fall 2024 ECE 4554/5554 Computer Vision: Course Project</span><br>
     <span style="font-size: 18px; line-height: 1.5em;">Virginia Tech</span>
+	<p> </p>
+	<a href="https://github.com/gilmorethomas/license-plate-detection" target="_blank">Project is on GitHub (Click Here)</a>
     <hr>
 
     <!-- Abstract -->
     <h3>Abstract</h3>
     <p>The increasing need for automated vehicle identification systems has driven the development of efficient license plate detection. This project aims to develop a system using a deep learning model, specifically YOLOv8, to detect and localize license plates in various environmental conditions. The approach involves compiling a diverse dataset, preprocessing images to enhance quality, and implementing a You Only Look Once (YOLO)v8-based detection model. Additionally, an Optical Character Recognition (OCR) system is used to extract the license plate number from the detected plates. The main result demonstrates significant potential for object detection and accurate license plate recognition in challenging environments.</p>
-
+    <br><br>
+	
     <!-- Teaser figure -->
     <h3>Example of License Plate Detection</h3>
     <p>A sample detection result from the developed system: The system processes a given photo, detects the license plate, and accurately reports the license plate number.</p>
@@ -65,7 +69,7 @@
     
     <!-- Introduction -->
     <h3>Introduction</h3>
-    <p>The growing demand for automated vehicle identification systems has highlighted the importance of efficient license plate detection. Such systems play a critical role in various applications, including law enforcement for tracking stolen vehicles, parking management for efficient space utilization, and traffic monitoring for maintaining road safety <a href="#reference1">[1]</a>. This project aims to develop a license plate detection system.</p>
+    <p>The growing demand for automated vehicle identification systems has highlighted the importance of efficient license plate detection. Such systems play a critical role in various applications, including law enforcement for tracking stolen vehicles, parking management for efficient space utilization, and traffic monitoring for maintaining road safety. This project aims to develop a license plate detection system.</p>
 
     <br><br>
     
@@ -82,7 +86,7 @@
     <h4>Tesseract Overview:</h4> 
         <p>The Tesseract OCR Engine is an open source OCR engine developed in the 1980s to 1990s and is now maintained by Google. The project found its motivation in commercial OCR engines being in their infancy in the dday and being unable to reliably and adequately perform well on anything other than high-quality prints. Tesseract assumes its input is a bianry image with optional polygonal defined text regions. The engine has a few main steps: preprocessing, text detection, character recognition, and post-processing. At a high level, the engine preprocesses the image through binarization (making black and white), removing noise, desckewing, and rescaling. Text detection is performed by image segmentation, dividing the image into distinct areas to identify text blocks and further separating these blocks into lines, words, and characters. For character recognition, Tesseract primarily compares segmented characters against pre-trained models, employing long short-term memory (LSTM) networks to recognize sequences of characters. This allows for improved accuracy for cursive and connected text. Post-processing is typically done using dictionary lookup and contextual analysis. These sort of post-processing metrics are typically ill-suited for things like license plate recognition, as there is no language-dictionary. If one knows a priori what the format of their license plate, for instance if it is all numeric, then results can likely be improved. For instance a model may have trouble distinguishing between the letter <i><b>S</b></i> and the number <i><b>5</b></i>, but if a user knows that the plate is all numeric, they can map those in post as well. <a href="https://static.googleusercontent.com/media/research.google.com/en//pubs/archive/33418.pdf">An Overview of the Tesseract OCR Engine</a><p>
 	  <h4>Data Collection:</h4> 
-	  <p>This dataset contains 433 images with bounding box annotations of the car license plates within the image. Annotations are provided in the PASCAL VOC format. Sourced from <a href="https://www.kaggle.com/datasets/andrewmvd/car-plate-detection">Kaggle</a>. This data fit most of our needs by pointing out the license plate; however, it did not include the license plate information, which was manually annotated later. The figure below shows example photos from the dataset along with how the annotations correspond to each photo and the truth box placed on each photo.<p>
+	  <p>This dataset contains 433 images with bounding box annotations of the car license plates within the image. Annotations are provided in the PASCAL VOC format. Sourced from <a href="https://www.kaggle.com/datasets/andrewmvd/car-plate-detection">Kaggle</a>. This data fit most of our needs by pointing out the license plate; however, it did not include the license plate information, which was manually annotated later. By implementing this step it allowed for the license plates characters to be compared agaisnt truth. The figure below shows example photos from the dataset along with how the annotations correspond to each photo and the truth box placed on each photo.<p>
       <div style="text-align: center;">
         <img style="height: 300px;" alt="Sample Data" src="KaggleDataExample.jpg">
       </div>
@@ -92,7 +96,7 @@
         <img style="height: 250px;" alt="Sample Input" src="NormalizeExample.jpg">
       </div>
       <h4>Detection Model:</h4> 
-	  <p>We implemented a deep learning-based object detection architecture, specifically selecting YOLOv8 <a href="#reference6">[6]</a> due to its balance between speed and accuracy for real-time applications. YOLOv8 (You Only Look Once version 8) is a state-of-the-art object detection model known for its efficiency and high performance. It operates by dividing the input image into a grid and predicting bounding boxes and class probabilities for each grid cell. This allows the model to detect multiple objects within an image in a single forward pass, making it highly suitable for real-time applications. YOLOv8 improves upon its predecessors with enhanced architecture, better feature extraction, and more accurate bounding box predictions. The model was trained using the annotated dataset, and various hyperparameters were tuned to optimize its performance for license plate detection.</p>
+	  <p>We implemented a deep learning-based object detection architecture, specifically selecting YOLOv8 due to its balance between speed and accuracy for real-time applications. YOLOv8 (You Only Look Once version 8) is a state-of-the-art object detection model known for its efficiency and high performance. It operates by dividing the input image into a grid and predicting bounding boxes and class probabilities for each grid cell. This allows the model to detect multiple objects within an image in a single forward pass, making it highly suitable for real-time applications. YOLOv8 improves upon its predecessors with enhanced architecture, better feature extraction, and more accurate bounding box predictions. The model was trained using the annotated dataset, and various hyperparameters were tuned to optimize its performance for license plate detection.</p>
       <h4>Model Evaluation:</h4> 
 	  <p>The model's performance was evaluated primarily on its precision in detecting the actual license number plate. The evaluation metrics included mean Average Precision (mAP) at different IoU thresholds (0.5 to 0.95), precision, recall, and F1-score. The results demonstrated significant potential for real-time object detection in challenging environments.<p>
     <br><br>
@@ -138,8 +142,8 @@
 	<h4>Visual Examples of Successful Detections</h4>
 	<p>The following examples demonstrate the robustness of the system in diverse scenarios:</p>
 	<ul>
-	  <li><strong>Single Vehicle Detection:</strong> The model accurately identifies the license plate on a single vehicle in a controlled environment.</li>
-	  <li><strong>Crowded Scenes:</strong> The system effectively detects multiple license plates in busy traffic or parking lots, showcasing its ability to handle complex scenarios.</li>
+	  <li><strong>Single Vehicle Detection:</strong> The model accurately identifies the license plate on a single vehicle in a controlled environment. These scenarios yielded excellent results and were relatively straightforward for the model to handle.</li>
+	  <li><strong>Crowded Scenes:</strong> The system effectively detects multiple license plates in busy traffic or parking lots, demonstrating its capability to handle complex scenarios. In the example shown, the system accurately identifies license plates on three vehicles, each captured from different angles and amidst the presence of people, highlighting its robustness and versatility.</li>
 	</ul>
 	<div class="image-grid">
       <img src="GoodDetection_2.png" alt="Good Detection 1">
@@ -150,12 +154,17 @@
 	<h4>Performance Under Difficult Situations</h4>
 	<p>The system was tested in conditions ranging from bright daylight to low-light environments:</p>
 	<ul>
-	  <li><strong>Bright Daylight:</strong> Consistent detection accuracy with clear and visible license plates.</li>
-	  <li><strong>Low-Light or Nighttime:</strong> Slight drop in detection accuracy due to reduced contrast, though preprocessing techniques mitigated some issues.</li>
+	<li><strong>Overcrowded Scenes:</strong> Effective detection in busy environments with complex backgrounds, such as crowded streets and areas with square-looking buildings.</li>
+	<li><strong>Bright Daylight:</strong> Consistent detection accuracy with clear and visible license plates, despite challenges posed by shadows and bright spots.</li> 
+	<li><strong>Low-Light or Nighttime:</strong> Slight drop in detection accuracy due to reduced contrast, although preprocessing techniques helped mitigate some issues.</li> 
+	<li><strong>Objects Similar to plates:</strong>Situations where objects resembled license plates but were not, posing challenges for accurate detection.</li>
 	</ul>
-    <div style="text-align: center;">
-      <img style="height: 350px;" alt="Bad Detection" src="BadDetection.png">
+	<div class="image-grid">
+      <img src="BadDetection.png" alt="Bad Detection 1">
+      <img src="BadDetection2.png" alt="Bad Detection 2">
+	  <img src="BadDetection3.png" alt="Bad Detection 3">
     </div>
+
 
 	<!-- Challenges in Diverse Plate Designs -->
 	<h4>Challenges in Diverse Plate Designs</h4>
@@ -190,9 +199,6 @@
       <li><a href="https://datasetninja.com/car-license-plate" target="_blank">Car License Plate Dataset</a></li>
       <li><a href="https://www.kaggle.com/datasets/tolgadincer/us-license-plates" target="_blank">U.S. License Plates</a></li>
       <li><a href="https://yolov8.com/" target="_blank">YOLOv8</a></li>
-      <li><a href="https://www.geeksforgeeks.org/detect-and-recognize-car-license-plate-from-a-video-in-real-time/" target="_blank">Picture 1</a></li>
-      <li><a href="https://signsandtagsonline.com/products/custom-louisiana-state-our-invironment-our-future-personalized-license-plate" target="_blank">Picture 2a</a></li>
-      <li><a href="https://www.newsweek.com/24-vehicles-look-forward-2024-1853505" target="_blank">Picture 2b</a></li>
     </ul>
 
     <hr>
