@@ -67,10 +67,11 @@
 
     <br><br>
     
-    <!-- Introduction -->
-    <h3>Introduction</h3>
-    <p>The growing demand for automated vehicle identification systems has highlighted the importance of efficient license plate detection. Such systems play a critical role in various applications, including law enforcement for tracking stolen vehicles, parking management for efficient space utilization, and traffic monitoring for maintaining road safety. This project aims to develop a license plate detection system.</p>
-
+    <h3>Introduction and Background</h3>
+    <p>Many modern applications rely on license plate detection for vehicle identification. Automated toll collection systems, parking management, and law enforcement agencies use license plate recognition to streamline operations and enhance security. License plate detection systems typically involve two main components: object detection and Optical Character Recognition (OCR). Object detection algorithms are used to locate and extract license plates from images, while OCR engines are employed to read and interpret the text on the plates. The integration of these components enables accurate and efficient license plate recognition, making it a valuable tool for various industries. This project aims to develop a license plate detection system.</p>
+    
+    <p>Many detection systems utilize classifiers for the task of detection by taking a classifier for an object and evaluating at various locations and scales in a test image. Some methods utilize regional methods to create bounding boxes, such as with techniques as edge detection, and then run a classifier on these boxes. Post-processing is then done to eliminate duplicate detections and score the boxes based on other in-scene components. <a href="#https://ieeexplore.ieee.org/document/6909475">[Rich Feature Hierarchies for Accurate Object Detection and Semantic Segmentation]</a>
+    </a></p>
     <br><br>
     
     <!-- Approach -->
@@ -82,9 +83,19 @@
         <img style="height: 300px;" alt="Model Architecture" src="top_level_architecture.png">
       </div>
     <h4>YOLO Overview:</h4> 
-      <p>YOLO is a relatively recent breakthrough and approach to object detection. YOLO is capable of processing images in real-time at a high frame rate, making it capable for things like object identification in videos.<p>
+      <p>YOLO is a relatively recent breakthrough and approach to object detection. The paradigm behind YOLO is reframing object detection as a single regression problem (thus you only look once) at an ima YOLO is capable of detection images in real-time at a high frame rate, making it capable for things like object identification in videos.</p>
+      <p> </p>At a high level, the way to think about YOLO is by its three building blocks: Backbone, Neck, and Head. The backbone serves as a feature extractor, capturing simple patterns like edges and textures. It aims to provide a rich representation of the input. The neck performs feature fusion and integrates contextual information through feature pyramid aggregation from various stages of the backbone. The head is the last part of the network and generates bounding boxes and confidence scores for each image. <a href="https://medium.com/@juanpedro.bc22/detailed-explanation-of-yolov8-architecture-part-1-6da9296b954e">[YOLOv8 Architecture]</a></p>
+      <p></p>YOLO's architecture is derived from the GoogLeNet model for image classification. It has 24 convolutional layers followed by 2 fully-connected layers. The more recent YOLOv8 is a PyTorch-based implementation that employs lighter and more optimized backbones. YOLO has limitations in its spatial constraints, allowing only a single bounding box per grid cell, which can be limiting for objects that are large or have multiple parts. This leads to difficulty in generalization in new or unusual aspect ratios. 
+        
+        <a href="https://arxiv.org/pdf/1506.02640">[You Only Look Once: Unified, Real-Time Object Detection]</a></p></p>
+        
+        
+     <div style="text-align: center;">
+        <img style="height: 300px;" alt="YOLO Architecture" src="yolo_model_architecture.png">
+      </div>
     <h4>Tesseract Overview:</h4> 
-        <p>The Tesseract OCR Engine is an open source OCR engine developed in the 1980s to 1990s and is now maintained by Google. The project found its motivation in commercial OCR engines being in their infancy in the dday and being unable to reliably and adequately perform well on anything other than high-quality prints. Tesseract assumes its input is a bianry image with optional polygonal defined text regions. The engine has a few main steps: preprocessing, text detection, character recognition, and post-processing. At a high level, the engine preprocesses the image through binarization (making black and white), removing noise, desckewing, and rescaling. Text detection is performed by image segmentation, dividing the image into distinct areas to identify text blocks and further separating these blocks into lines, words, and characters. For character recognition, Tesseract primarily compares segmented characters against pre-trained models, employing long short-term memory (LSTM) networks to recognize sequences of characters. This allows for improved accuracy for cursive and connected text. Post-processing is typically done using dictionary lookup and contextual analysis. These sort of post-processing metrics are typically ill-suited for things like license plate recognition, as there is no language-dictionary. If one knows a priori what the format of their license plate, for instance if it is all numeric, then results can likely be improved. For instance a model may have trouble distinguishing between the letter <i><b>S</b></i> and the number <i><b>5</b></i>, but if a user knows that the plate is all numeric, they can map those in post as well. <a href="https://static.googleusercontent.com/media/research.google.com/en//pubs/archive/33418.pdf">An Overview of the Tesseract OCR Engine</a><p>
+        <p>The Tesseract OCR Engine is an open source OCR engine developed in the 1980s to 1990s and is now maintained by Google. The project found its motivation in commercial OCR engines being in their infancy in the dday and being unable to reliably and adequately perform well on anything other than high-quality prints. Tesseract assumes its input is a bianry image with optional polygonal defined text regions. The engine has a few main steps: preprocessing, text detection, character recognition, and post-processing. At a high level, the engine preprocesses the image through binarization (making black and white), removing noise, desckewing, and rescaling. Text detection is performed by image segmentation, dividing the image into distinct areas to identify text blocks and further separating these blocks into lines, words, and characters. For character recognition, Tesseract primarily compares segmented characters against pre-trained models, employing long short-term memory (LSTM) networks to recognize sequences of characters. This allows for improved accuracy for cursive and connected text. Post-processing is typically done using dictionary lookup and contextual analysis.  At output, Tesseract can produce plaintext or can output in structured format like PDF or TSV. <br><br>The sort of post-processing metrix employed by Tesseract are typically ill-suited for things like license plate recognition, as there is no language-dictionary. If one knows a priori what the format of their license plate — for instance if it is all numeric — then results can likely be improved. For instance a model may have trouble distinguishing between the letter <i><b>S</b></i> and the number <i><b>5</b></i>, but if a user knows that the plate is all numeric, they can map those in post as well.
+          <a href="https://static.googleusercontent.com/media/research.google.com/en//pubs/archive/33418.pdf">An Overview of the Tesseract OCR Engine</a><p>
 	  <h4>Data Collection:</h4> 
 	  <p>This dataset contains 433 images with bounding box annotations of the car license plates within the image. Annotations are provided in the PASCAL VOC format. Sourced from <a href="https://www.kaggle.com/datasets/andrewmvd/car-plate-detection">Kaggle</a>. This data fit most of our needs by pointing out the license plate; however, it did not include the license plate information, which was manually annotated later. By implementing this step it allowed for the license plates characters to be compared agaisnt truth. The figure below shows example photos from the dataset along with how the annotations correspond to each photo and the truth box placed on each photo.<p>
       <div style="text-align: center;">
@@ -199,6 +210,12 @@
       <li><a href="https://datasetninja.com/car-license-plate" target="_blank">Car License Plate Dataset</a></li>
       <li><a href="https://www.kaggle.com/datasets/tolgadincer/us-license-plates" target="_blank">U.S. License Plates</a></li>
       <li><a href="https://yolov8.com/" target="_blank">YOLOv8</a></li>
+      <li><a href="https://www.geeksforgeeks.org/detect-and-recognize-car-license-plate-from-a-video-in-real-time/" target="_blank">Picture 1</a></li>
+      <li><a href="https://signsandtagsonline.com/products/custom-louisiana-state-our-invironment-our-future-personalized-license-plate" target="_blank">Picture 2a</a></li>
+      <li><a href="https://www.newsweek.com/24-vehicles-look-forward-2024-1853505" target="_blank">Picture 2b</a></li>
+      <li><a href="https://ieeexplore.ieee.org/document/6909475" target="_blank">Rich Feature Hierarchies for Accurate Object Detection and Semantic Segmentation</a></li>
+      <li><a href="https://medium.com/@juanpedro.bc22/detailed-explanation-of-yolov8-architecture-part-1-6da9296b954e" target="_blank">YOLOv8 Architecture</a></li> 
+      <li><a href="https://arxiv.org/pdf/1506.02640" target="_blank">You Only Look Once: Unified, Real-Time Object Detection</a></li> 
     </ul>
 
     <hr>
